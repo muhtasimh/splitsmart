@@ -1,0 +1,213 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SplitSmart | Shared Expense Manager</title>
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}">
+</head>
+<body>
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">$</div>
+        <span>SplitSmart</span>
+    </div>
+
+    <nav class="nav">
+        <button class="nav-item active">
+            <span>⌂</span>
+            Dashboard
+        </button>
+
+        <button class="nav-item">
+            <span>↔</span>
+            Expenses
+        </button>
+
+        <button class="nav-item">
+            <span>♟</span>
+            Groups
+        </button>
+
+        <button class="nav-item">
+            <span>✓</span>
+            Settlements
+        </button>
+    </nav>
+
+    <div class="sidebar-footer">
+        <button class="logout-button" id="logoutButton">
+    Sign out
+</button>
+        <div class="user-avatar">SS</div>
+        <div>
+            <strong>SplitSmart</strong>
+            <p>Expense Manager</p>
+        </div>
+    </div>
+</aside>
+<main class="main-content">
+    <header class="dashboard-header">
+        <div>
+            <p class="eyebrow">OVERVIEW</p>
+            <h1>Dashboard</h1>
+            <p class="subtitle">
+                Track shared expenses, balances, and repayments.
+            </p>
+        </div>
+
+        <button class="add-expense-button" id="addExpenseButton">
+            <span>+</span>
+            Add expense
+        </button>
+    </header>
+    <section class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total expenses</div>
+        <div class="stat-value" id="totalExpenses">$0.00</div>
+        <div class="stat-note">Across your groups</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">You are owed</div>
+        <div class="stat-value positive" id="totalOwed">$0.00</div>
+        <div class="stat-note">Outstanding balance</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">You owe</div>
+        <div class="stat-value negative" id="totalOwe">$0.00</div>
+        <div class="stat-note">Outstanding balance</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Active groups</div>
+        <div class="stat-value" id="groupCount">0</div>
+        <div class="stat-note">Shared expense groups</div>
+    </div>
+</section>
+<section class="dashboard-grid">
+    <div class="panel expenses-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Recent expenses</h2>
+                <p>Your latest shared purchases</p>
+            </div>
+
+            <input
+                class="search-input"
+                id="expenseSearch"
+                type="search"
+                placeholder="Search expenses..."
+            >
+        </div>
+
+        <div class="expense-list" id="expenseList">
+            <div class="empty-state">
+                Loading expenses...
+            </div>
+        </div>
+    </div>
+    <div class="panel groups-panel">
+    <div class="panel-header">
+        <div>
+            <h2>Your groups</h2>
+            <p>People you share expenses with</p>
+        </div>
+    </div>
+
+    <div class="group-list" id="groupList">
+        <div class="empty-state">
+            Loading groups...
+        </div>
+    </div>
+</div>
+</section>
+</section>
+
+<section class="panel repayments-panel">
+    <div class="panel-header">
+        <div>
+            <h2>Suggested repayments</h2>
+            <p>Smart settlement suggestions based on group balances</p>
+        </div>
+    </div>
+
+    <div class="debt-list" id="debtList">
+        <div class="empty-state">
+            Select a group to view repayment suggestions.
+        </div>
+    </div>
+</section>
+
+</main>
+</main>
+<div class="modal hidden" id="expenseModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div>
+                <h2>Add expense</h2>
+                <p>Record a new shared purchase.</p>
+            </div>
+
+            <button class="close-button" id="closeModal">&times;</button>
+        </div>
+
+        <form id="expenseForm">
+            <label>
+                Description
+                <input id="description" type="text" placeholder="Groceries" required>
+            </label>
+
+            <label>
+                Amount
+                <input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+            </label>
+
+            <label>
+                Group
+                <select id="groupSelect" required></select>
+            </label>
+
+            <label>
+                Paid by
+                <select id="payerSelect" required></select>
+            </label>
+
+            <label>
+                Participants
+                <select id="participantSelect" multiple required></select>
+            </label>
+
+            <button class="add-expense-button full-width" type="submit">
+                Save expense
+            </button>
+
+            <p class="form-message" id="formMessage"></p>
+        </form>
+    </div>
+</div>
+<script src="{% static 'expenses/app.js' %}"></script>
+</body>
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+        <div class="brand-icon">$</div>
+        <h2>Welcome to SplitSmart</h2>
+        <p>Sign in to manage your shared expenses.</p>
+
+        <form id="loginForm">
+            <input id="loginUsername" type="text" placeholder="Username" required>
+            <input id="loginPassword" type="password" placeholder="Password" required>
+
+            <button class="add-expense-button full-width" type="submit">
+                Sign in
+            </button>
+
+            <p class="form-message" id="loginMessage"></p>
+        </form>
+    </div>
+</div>
+<script src=" "
+</html>
