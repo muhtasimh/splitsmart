@@ -11,26 +11,34 @@ SplitSmart is a full-stack shared-expense management application for tracking ex
 - Expense search and filtering
 - Validation for expense amounts, participants, and group membership
 - Automatic calculation of each member's net balance
-- Debt simplification that generates repayment suggestions from group balances
-- Dashboard displaying expenses, balances, groups, and repayments
+- Greedy debt simplification that generates repayment suggestions from group balances
+- Dashboard displaying expenses, balances, groups, and suggested repayments
 - Responsive web interface
 - Sign-in and sign-out functionality
 
 ## Tech Stack
 
+### Backend
 - Python
 - Django
 - Django REST Framework
 - MySQL
+
+### Frontend
 - JavaScript
 - HTML/CSS
-- Git & GitHub
+
+### Development
+- Git
+- GitHub
 
 ## How It Works
 
-Each expense records a payer, a group, an amount, and the users participating in the expense. SplitSmart calculates each participant's share and maintains net balances for group members.
+Each expense records a payer, a group, an amount, and the users participating in the expense.
 
-The application then matches debtors with creditors using a greedy debt-simplification algorithm to generate straightforward repayment suggestions.
+SplitSmart calculates each participant's share and determines the resulting net balance for each group member. Positive balances represent money owed to a member, while negative balances represent money that member owes.
+
+The application then uses a greedy debt-simplification algorithm to match debtors with creditors and generate straightforward repayment suggestions.
 
 ## API
 
@@ -46,11 +54,97 @@ The backend exposes REST endpoints for:
 
 Protected endpoints require token authentication.
 
+## Validation
+
+The API validates expense data before it is stored, including:
+
+- Expense amounts must be valid and greater than zero
+- Payers must belong to the selected group
+- Participants must belong to the selected group
+- Expenses must contain valid participants
+
 ## Local Setup
 
-1. Clone the repository.
-2. Create and activate a Python virtual environment.
-3. Install dependencies:
+### 1. Clone the repository
 
-   ```bash
-   pip install -r requirements.txt
+```bash
+git clone <repository-url>
+cd SplitSmart
+```
+
+### 2. Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+Activate it on Windows:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure MySQL
+
+Create a MySQL database and database user for SplitSmart.
+
+Create a `.env` file in the project root containing your local database configuration:
+
+```env
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_HOST=localhost
+DB_PORT=3306
+```
+
+Do not commit the `.env` file.
+
+### 5. Apply database migrations
+
+```bash
+python manage.py migrate
+```
+
+### 6. Start the application
+
+```bash
+python manage.py runserver
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
+
+## Project Structure
+
+```text
+SplitSmart/
+├── expenses/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   └── ...
+├── splitsmart/
+│   ├── settings.py
+│   ├── urls.py
+│   └── ...
+├── manage.py
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+## Security
+
+Database credentials are stored in environment variables rather than directly in the source code. The `.env` file and local virtual environment are excluded from version control.
+
+Protected API endpoints use token authentication.
