@@ -496,3 +496,43 @@ body {
 * {
     box-sizing: border-box;
 }
+
+.logout-button {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.logout-button {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    background: transparent;
+    color: #cbd5e1;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.logout-button:hover {
+    background: #1e293b;
+    color: white;
+    border-color: #475569;
+}
