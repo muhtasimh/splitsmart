@@ -31,6 +31,8 @@ jobs:
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
 
+    SECRET_KEY: "ci-only-secret-key-for-splitsmart"
+
     steps:
       - uses: actions/checkout@v4
 
