@@ -14,6 +14,9 @@ SplitSmart is a full-stack shared-expense management application for tracking ex
 - Greedy debt simplification that generates repayment suggestions from group balances
 - Dashboard displaying expenses, balances, groups, and suggested repayments
 - Responsive web interface
+- Automated API tests for authentication, expense validation, balance calculations, and debt simplification
+- Dockerized Django and MySQL development environment using Docker Compose
+- GitHub Actions CI workflow that automatically runs the test suite on pushes and pull requests
 - Sign-in and sign-out functionality
 
 ## Tech Stack
@@ -31,6 +34,10 @@ SplitSmart is a full-stack shared-expense management application for tracking ex
 ### Development
 - Git
 - GitHub
+- Docker
+- Docker Compose
+- GitHub Actions
+- Django REST Framework APITestCase
 
 ## How It Works
 
@@ -123,6 +130,45 @@ Then open:
 ```text
 http://127.0.0.1:8000/
 ```
+## Docker Setup
+
+SplitSmart can also be run with Docker Compose, which starts both the Django application and MySQL database in containers.
+
+```bash
+docker compose up -d
+```
+
+Apply migrations:
+
+```bash
+docker compose exec web python manage.py migrate
+```
+
+Run the automated test suite:
+
+```bash
+docker compose exec web python manage.py test
+```
+
+Stop the containers:
+
+```bash
+docker compose down
+```
+
+The MySQL service includes a health check so the Django container waits for the database to become available before starting.
+
+## Continuous Integration
+
+GitHub Actions runs the automated test suite on every push and pull request.
+
+The CI workflow:
+
+- Starts a MySQL 8.0 service
+- Installs the Python dependencies
+- Configures the test database
+- Runs the Django test suite
+- Fails the workflow if any test fails
 
 ## Project Structure
 
