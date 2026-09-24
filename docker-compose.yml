@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: splitsmart
+      MYSQL_USER: splitsmart_user
+      MYSQL_PASSWORD: splitsmart_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_NAME: splitsmart
+      DB_USER: splitsmart_user
+      DB_PASSWORD: splitsmart_password
+      DB_HOST: db
+      DB_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
