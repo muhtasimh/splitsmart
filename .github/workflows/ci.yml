@@ -1,0 +1,48 @@
+name: SplitSmart CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: splitsmart
+          MYSQL_USER: splitsmart_user
+          MYSQL_PASSWORD: splitsmart_password
+          MYSQL_ROOT_PASSWORD: root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_NAME: splitsmart
+      DB_USER: splitsmart_user
+      DB_PASSWORD: splitsmart_password
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config default-libmysqlclient-dev build-essential
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python manage.py test
