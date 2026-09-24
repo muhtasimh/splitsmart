@@ -25,13 +25,12 @@ jobs:
           --health-retries=10
 
     env:
+      SECRET_KEY: "ci-only-secret-key-for-splitsmart"
       DB_NAME: splitsmart
       DB_USER: splitsmart_user
       DB_PASSWORD: splitsmart_password
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
-
-    SECRET_KEY: "ci-only-secret-key-for-splitsmart"
 
     steps:
       - uses: actions/checkout@v4
