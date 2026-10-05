@@ -624,3 +624,55 @@ body {
 .stat-modal-card { max-width:460px; }
 .stat-modal-body { padding-top:4px; }
 .stat-modal-body p { color:var(--muted); line-height:1.6; margin-bottom:22px; }
+
+
+/* Clickable management rows */
+.managed-expense {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.managed-expense:hover { background: #f3f4f6; }
+.group-item-row .group-item:hover { background: #f3f4f6; }
+
+/* Modal management actions */
+.modal-management-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.modal-management-actions .add-expense-button { flex: 1; }
+.delete-modal-button {
+    flex: 1;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: var(--negative);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+.delete-modal-button:hover { background: #fee2e2; }
+.delete-modal-button.hidden { display: none; }
+
+/* Keep repayment relationships visually aligned. */
+.debt-list { margin-top: 8px; }
+.debt-item {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) 70px minmax(120px, 1fr) 100px;
+    column-gap: 18px;
+    align-items: center;
+}
+.debt-item > :nth-child(2) { text-align: center; }
+.debt-item > :nth-child(3) { text-align: left; }
+.debt-item > :last-child { text-align: right; }
+
+@media (max-width:650px) {
+    .debt-item { grid-template-columns: 1fr auto 1fr; }
+    .debt-item > :last-child { grid-column: 1 / -1; text-align: right; }
+    .modal-management-actions { flex-direction: column; }
+}
