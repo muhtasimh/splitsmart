@@ -24,6 +24,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
+    queryset = Group.objects.none()
     serializer_class = GroupSerializer
     filter_backends = [SearchFilter]
     search_fields = ["name", "members__name"]
@@ -91,6 +92,7 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
 
 
 class ExpenseViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
+    queryset = Expense.objects.none()
     serializer_class = ExpenseSerializer
     filter_backends = [SearchFilter]
     search_fields = ["description", "group__name", "paid_by__name", "participants__name"]
@@ -100,6 +102,7 @@ class ExpenseViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
 
 
 class SettlementViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
+    queryset = Settlement.objects.none()
     serializer_class = SettlementSerializer
 
     def get_queryset(self):
