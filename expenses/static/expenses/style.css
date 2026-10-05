@@ -676,3 +676,27 @@ body {
     .debt-item > :last-child { grid-column: 1 / -1; text-align: right; }
     .modal-management-actions { flex-direction: column; }
 }
+
+
+/* Full-width list rows: preserve the original clean Expenses layout. */
+.expense-list { width: 100%; }
+.expense-item.managed-expense {
+    display: flex;
+    width: 100%;
+    min-width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 8px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.expense-item.managed-expense:last-child { border-bottom: 0; }
+.expense-item.managed-expense > div:first-child { align-items: flex-start; text-align: left; }
+.expense-item.managed-expense .expense-right {
+    margin-left: auto;
+    flex-direction: row;
+    align-items: center;
+}
