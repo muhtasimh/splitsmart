@@ -1,141 +1,33 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const token = () => localStorage.getItem("splitsmartToken")
-    const authHeaders = () => ({ "Authorization": `Token ${token()}` })
-    const loginOverlay = document.getElementById("loginOverlay")
-    const expenseModal = document.getElementById("expenseModal")
-    const groupModal = document.getElementById("groupModal")
-
-    function showView(name) {
-        document.querySelectorAll(".app-view").forEach(view => view.classList.remove("active"))
-        document.querySelectorAll(".nav-item").forEach(item => item.classList.toggle("active", item.dataset.view === name))
-        document.getElementById(`${name}View`).classList.add("active")
-        window.location.hash = name === "dashboard" ? "" : name
-    }
-
-    document.querySelectorAll(".nav-item").forEach(item => item.addEventListener("click", () => showView(item.dataset.view)))
-    const initialView = ["expenses", "groups", "settlements"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard"
-    showView(initialView)
-
-    document.getElementById("logoutButton").addEventListener("click", () => {
-        localStorage.removeItem("splitsmartToken")
-        loginOverlay.classList.remove("hidden")
-    })
-
-    document.getElementById("loginForm").addEventListener("submit", async event => {
-        event.preventDefault()
-        const response = await fetch("/api/token/", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: loginUsername.value, password: loginPassword.value })
-        })
-        if (!response.ok) { loginMessage.textContent = "Invalid username or password."; return }
-        const data = await response.json()
-        localStorage.setItem("splitsmartToken", data.token)
-        loginOverlay.classList.add("hidden")
-        loginMessage.textContent = ""
-        await refreshAll()
-    })
-
-    async function getUsers() {
-        const response = await fetch("/api/users/", { headers: authHeaders() })
-        return response.ok ? response.json() : []
-    }
-
-    async function loadGroups() {
-        const response = await fetch("/api/groups/", { headers: authHeaders() })
-        if (!response.ok) { loginOverlay.classList.remove("hidden"); return [] }
-        const groups = await response.json()
-        groupCount.textContent = groups.length
-        const markup = groups.length ? groups.map(group => `
-            <button class="group-item" data-group-id="${group.id}">
-                <div><strong>${group.name}</strong><span>${group.members.length} member${group.members.length === 1 ? "" : "s"}</span></div><span>›</span>
-            </button>`).join("") : '<div class="empty-state">No groups yet. Create your first group.</div>'
-        dashboardGroupList.innerHTML = markup
-        groupsPageList.innerHTML = markup
-        settlementGroupList.innerHTML = markup
-        document.querySelectorAll("[data-group-id]").forEach(el => el.addEventListener("click", async () => {
-            showView("settlements")
-            await loadDebts(el.dataset.groupId)
-        }))
-        return groups
-    }
-
-    async function populateForms(groups) {
-        const users = await getUsers()
-        groupSelect.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join("")
-        payerSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
-        participantSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
-        groupMembers.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
-    }
-
-    async function loadExpenses(search = "") {
-        const response = await fetch(`/api/expenses/?search=${encodeURIComponent(search)}`, { headers: authHeaders() })
-        if (!response.ok) return []
-        const expenses = await response.json()
-        if (!search) totalExpenses.textContent = `$${expenses.reduce((sum, e) => sum + Number(e.amount), 0).toFixed(2)}`
-        const markup = expenses.length ? expenses.map(e => `<div class="expense-item"><div><strong>${e.description}</strong><span>Shared expense</span></div><strong>$${Number(e.amount).toFixed(2)}</strong></div>`).join("") : '<div class="empty-state">No expenses found.</div>'
-        expenseList.innerHTML = markup
-        if (!search) dashboardExpenseList.innerHTML = markup
-        return expenses
-    }
-
-    async function loadBalances(groups) {
-        const meResponse = await fetch("/api/me/", { headers: authHeaders() })
-        if (!meResponse.ok) return
-        const me = await meResponse.json()
-        let total = 0
-        for (const group of groups) {
-            const response = await fetch(`/api/groups/${group.id}/balances/`, { headers: authHeaders() })
-            if (!response.ok) continue
-            const balances = await response.json()
-            const mine = balances.find(b => b.user_id === me.id)
-            if (mine) total += Number(mine.balance)
-        }
-        totalOwed.textContent = `$${Math.max(total, 0).toFixed(2)}`
-        totalOwe.textContent = `$${Math.max(-total, 0).toFixed(2)}`
-    }
-
-    async function loadDebts(groupId) {
-        const response = await fetch(`/api/groups/${groupId}/debts/`, { headers: authHeaders() })
-        if (!response.ok) return
-        const debts = await response.json()
-        debtList.innerHTML = debts.length ? debts.map(d => `<div class="debt-item"><strong>${d.from}</strong><span>pays</span><strong>${d.to}</strong><strong>$${Number(d.amount).toFixed(2)}</strong></div>`).join("") : '<div class="empty-state">Everyone in this group is settled up.</div>'
-    }
-
-    async function refreshAll() {
-        if (!token()) { loginOverlay.classList.remove("hidden"); return }
-        const groups = await loadGroups()
-        await Promise.all([loadExpenses(), populateForms(groups), loadBalances(groups)])
-    }
-
-    expenseSearch.addEventListener("input", () => loadExpenses(expenseSearch.value.trim()))
-    document.querySelectorAll(".open-expense").forEach(button => button.addEventListener("click", () => expenseModal.classList.remove("hidden")))
-    closeExpenseModal.addEventListener("click", () => expenseModal.classList.add("hidden"))
-    openGroupModal.addEventListener("click", () => groupModal.classList.remove("hidden"))
-    closeGroupModal.addEventListener("click", () => groupModal.classList.add("hidden"))
-    ;[expenseModal, groupModal].forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) modal.classList.add("hidden") }))
-
-    expenseForm.addEventListener("submit", async event => {
-        event.preventDefault()
-        const participants = Array.from(participantSelect.selectedOptions).map(o => Number(o.value))
-        const response = await fetch("/api/expenses/", {
-            method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify({ description: description.value, amount: amount.value, group: Number(groupSelect.value), paid_by: Number(payerSelect.value), participants })
-        })
-        if (!response.ok) { formMessage.textContent = "Could not save expense."; return }
-        expenseForm.reset(); expenseModal.classList.add("hidden"); formMessage.textContent = ""; await refreshAll()
-    })
-
-    groupForm.addEventListener("submit", async event => {
-        event.preventDefault()
-        const members = Array.from(groupMembers.selectedOptions).map(o => Number(o.value))
-        if (!members.length) { groupFormMessage.textContent = "Select at least one member."; return }
-        const response = await fetch("/api/groups/", {
-            method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify({ name: groupName.value.trim(), members })
-        })
-        if (!response.ok) { groupFormMessage.textContent = "Could not create group."; return }
-        groupForm.reset(); groupModal.classList.add("hidden"); groupFormMessage.textContent = ""; await refreshAll()
-    })
-
-    refreshAll()
-})
+const $=id=>document.getElementById(id), token=()=>localStorage.getItem("splitsmartToken"), headers=()=>({"Authorization":`Token ${token()}`});
+let groups=[], expenses=[], selectedGroup=null;
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function showView(n){document.querySelectorAll(".app-view").forEach(v=>v.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(i=>i.classList.toggle("active",i.dataset.view===n));$(n+"View").classList.add("active");location.hash=n==="dashboard"?"":n}
+document.querySelectorAll(".nav-item").forEach(i=>i.onclick=()=>showView(i.dataset.view));showView(["expenses","groups","settlements"].includes(location.hash.slice(1))?location.hash.slice(1):"dashboard");
+$("logoutButton").onclick=()=>{localStorage.removeItem("splitsmartToken");$("loginOverlay").classList.remove("hidden")};
+$("loginForm").onsubmit=async e=>{e.preventDefault();const r=await fetch("/api/token/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:$("loginUsername").value,password:$("loginPassword").value})});if(!r.ok){$("loginMessage").textContent="Invalid username or password.";return}localStorage.setItem("splitsmartToken",(await r.json()).token);$("loginOverlay").classList.add("hidden");refreshAll()};
+async function api(url,opts={}){opts.headers={...headers(),...(opts.headers||{})};const r=await fetch(url,opts);if(r.status===401||r.status===403)$("loginOverlay").classList.remove("hidden");return r}
+function groupMarkup(list,mode="manage"){return list.length?list.map(g=>`<div class="group-item-row"><button class="group-item" data-open-group="${g.id}" data-mode="${mode}"><div><strong>${esc(g.name)}</strong><span>${g.members.length} member${g.members.length===1?"":"s"}</span></div><span>›</span></button>${mode==="manage"?`<div class="row-actions"><button data-edit-group="${g.id}">Edit</button><button class="danger-link" data-delete-group="${g.id}">Delete</button></div>`:""}</div>`).join(""):'<div class="empty-state">No groups found.</div>'}
+function renderGroups(){const q=$("groupSearch").value.toLowerCase(),sq=$("settlementSearch").value.toLowerCase();$("dashboardGroupList").innerHTML=groupMarkup(groups.slice(0,5),"details");$("groupsPageList").innerHTML=groupMarkup(groups.filter(g=>g.name.toLowerCase().includes(q)||g.members.some(m=>m.name.toLowerCase().includes(q))));$("settlementGroupList").innerHTML=groupMarkup(groups.filter(g=>g.name.toLowerCase().includes(sq)||g.members.some(m=>m.name.toLowerCase().includes(sq))),"details");bindGroupActions()}
+function expenseMarkup(list){return list.length?list.map(e=>`<div class="expense-item"><div><strong>${esc(e.description)}</strong><span>${esc(e.group_name)} · Paid by ${esc(e.paid_by_name)} · ${e.participant_names.map(esc).join(", ")}</span></div><div class="expense-right"><strong>$${Number(e.amount).toFixed(2)}</strong><div class="row-actions"><button data-edit-expense="${e.id}">Edit</button><button class="danger-link" data-delete-expense="${e.id}">Delete</button></div></div></div>`).join(""):'<div class="empty-state">No expenses found.</div>'}
+function renderExpenses(list=expenses){$("expenseList").innerHTML=expenseMarkup(list);$("dashboardExpenseList").innerHTML=expenseMarkup(expenses.slice(0,5));bindExpenseActions()}
+async function loadGroups(){const r=await api("/api/groups/");if(!r.ok)return;groups=await r.json();$("groupCount").textContent=groups.length;renderGroups();populateGroupSelect()}
+async function loadExpenses(){const r=await api("/api/expenses/");if(!r.ok)return;expenses=await r.json();$("totalExpenses").textContent="$"+expenses.reduce((s,e)=>s+Number(e.amount),0).toFixed(2);renderExpenses()}
+function populateGroupSelect(){ $("groupSelect").innerHTML=groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join("");updateExpenseMembers()}
+function updateExpenseMembers(){const g=groups.find(x=>x.id===Number($("groupSelect").value));const options=(g?.members||[]).map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("");$("payerSelect").innerHTML=options;$("participantSelect").innerHTML=options}
+$("groupSelect").onchange=updateExpenseMembers;
+async function loadBalances(){let mine=0;for(const g of groups){const r=await api(`/api/groups/${g.id}/balances/`);if(!r.ok)continue;const b=await r.json();const me=b.find(x=>x.name.toLowerCase()===$("loginUsername").value.toLowerCase());if(me)mine+=Number(me.balance)}$("totalOwed").textContent="$"+Math.max(mine,0).toFixed(2);$("totalOwe").textContent="$"+Math.max(-mine,0).toFixed(2)}
+function bindGroupActions(){document.querySelectorAll("[data-open-group]").forEach(b=>b.onclick=()=>openDetails(Number(b.dataset.openGroup),b.dataset.mode));document.querySelectorAll("[data-edit-group]").forEach(b=>b.onclick=()=>openGroupModal(Number(b.dataset.editGroup)));document.querySelectorAll("[data-delete-group]").forEach(b=>b.onclick=()=>deleteGroup(Number(b.dataset.deleteGroup)))}
+async function openDetails(id,mode){selectedGroup=id;showView(mode==="details"?"settlements":"groups");const r=await api(`/api/groups/${id}/details/`);if(!r.ok)return;const d=await r.json();$("groupDetails").innerHTML=`<div class="detail-card"><h3>${esc(d.group.name)}</h3><p><strong>Members:</strong> ${d.group.members.map(m=>esc(m.name)).join(", ")}</p><div class="balance-grid">${d.balances.map(b=>`<span>${esc(b.name)}: <strong>$${Number(b.balance).toFixed(2)}</strong></span>`).join("")}</div><h4>Group expenses</h4>${expenseMarkup(d.expenses)}</div>`;$("debtList").innerHTML=d.debts.length?d.debts.map(x=>`<div class="debt-item"><strong>${esc(x.from)}</strong><span>pays</span><strong>${esc(x.to)}</strong><strong>$${Number(x.amount).toFixed(2)}</strong></div>`).join(""):'<div class="empty-state">Everyone in this group is settled up.</div>';bindExpenseActions()}
+function openGroupModal(id=null){const g=groups.find(x=>x.id===id);$("groupId").value=id||"";$("groupModalTitle").textContent=g?"Edit group":"Create group";$("groupName").value=g?.name||"";$("groupMembers").value=g?g.members.map(m=>m.name).join("\n"):"";$("groupModal").classList.remove("hidden")}
+async function deleteGroup(id){const g=groups.find(x=>x.id===id);if(!confirm(`Delete "${g?.name}" and all of its expenses? This cannot be undone.`))return;const r=await api(`/api/groups/${id}/`,{method:"DELETE"});if(r.ok){if(selectedGroup===id){$("groupDetails").innerHTML="";$("debtList").innerHTML=""}await refreshAll()}}
+$("groupForm").onsubmit=async e=>{e.preventDefault();const id=$("groupId").value,names=$("groupMembers").value.split("\n").map(x=>x.trim()).filter(Boolean);if(!names.length){$("groupFormMessage").textContent="Add at least one member.";return}const r=await api(id?`/api/groups/${id}/`:"/api/groups/",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("groupName").value.trim(),member_names:names})});if(!r.ok){$("groupFormMessage").textContent="Could not save group.";return}$("groupModal").classList.add("hidden");$("groupForm").reset();await refreshAll()};
+function openExpenseModal(id=null){const e=expenses.find(x=>x.id===id);$("expenseId").value=id||"";$("expenseModalTitle").textContent=e?"Edit expense":"Add expense";if(e){$("description").value=e.description;$("amount").value=e.amount;$("groupSelect").value=e.group;updateExpenseMembers();$("payerSelect").value=e.paid_by;Array.from($("participantSelect").options).forEach(o=>o.selected=e.participants.includes(Number(o.value)))}else{$("expenseForm").reset();populateGroupSelect()}$("expenseModal").classList.remove("hidden")}
+function bindExpenseActions(){document.querySelectorAll("[data-edit-expense]").forEach(b=>b.onclick=()=>openExpenseModal(Number(b.dataset.editExpense)));document.querySelectorAll("[data-delete-expense]").forEach(b=>b.onclick=()=>deleteExpense(Number(b.dataset.deleteExpense)))}
+async function deleteExpense(id){const e=expenses.find(x=>x.id===id);if(!confirm(`Delete expense "${e?.description}"?`))return;const r=await api(`/api/expenses/${id}/`,{method:"DELETE"});if(r.ok){await refreshAll();if(selectedGroup)await openDetails(selectedGroup,"details")}}
+$("expenseForm").onsubmit=async e=>{e.preventDefault();const id=$("expenseId").value,participants=Array.from($("participantSelect").selectedOptions).map(o=>Number(o.value));const body={description:$("description").value,amount:$("amount").value,group:Number($("groupSelect").value),paid_by:Number($("payerSelect").value),participants};const r=await api(id?`/api/expenses/${id}/`:"/api/expenses/",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok){$("formMessage").textContent="Could not save expense.";return}$("expenseModal").classList.add("hidden");await refreshAll();if(selectedGroup)await openDetails(selectedGroup,"details")};
+$("expenseSearch").oninput=()=>{const q=$("expenseSearch").value.toLowerCase();renderExpenses(expenses.filter(e=>[e.description,e.group_name,e.paid_by_name,...e.participant_names].some(x=>x.toLowerCase().includes(q))))};$("groupSearch").oninput=renderGroups;$("settlementSearch").oninput=renderGroups;
+document.querySelectorAll(".open-expense").forEach(b=>b.onclick=()=>openExpenseModal());$("openGroupModal").onclick=()=>openGroupModal();$("closeExpenseModal").onclick=()=>$("expenseModal").classList.add("hidden");$("closeGroupModal").onclick=()=>$("groupModal").classList.add("hidden");[$("expenseModal"),$("groupModal")].forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.add("hidden")});
+async function refreshAll(){if(!token()){$("loginOverlay").classList.remove("hidden");return}await loadGroups();await loadExpenses();await loadBalances()}
+refreshAll();
+});
