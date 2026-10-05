@@ -2,6 +2,10 @@
 
 SplitSmart is a full-stack shared-expense management application for tracking expenses between groups of users, calculating balances, and generating simplified repayment suggestions.
 
+## Live Demo
+
+https://splitsmart-muhtasimh-hndbbtaegzcxe9ge.canadacentral-01.azurewebsites.net/
+
 ## Features
 
 - Token-based user authentication
