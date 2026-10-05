@@ -606,3 +606,6 @@ body {
 #groupForm textarea { width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:9px; background:#f9fafb; outline:none; resize:vertical; font:inherit; }
 #groupForm textarea:focus { border-color:var(--primary); background:white; }
 @media (max-width:650px){.panel-header{align-items:flex-start;flex-direction:column}.search-input{width:100%}.expense-item{align-items:flex-start;flex-direction:column}.expense-right{width:100%;justify-content:space-between}.group-item-row{align-items:flex-start}.row-actions{margin-top:8px}}
+
+/* Expense management actions stay horizontal on the Expenses page. */
+.expense-right .row-actions { flex-direction: row; flex-wrap: nowrap; }
