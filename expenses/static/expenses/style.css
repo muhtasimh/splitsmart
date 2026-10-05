@@ -618,3 +618,9 @@ body {
 .dashboard-expense { width:100%; border:0; background:transparent; text-align:left; font:inherit; cursor:pointer; }
 .dashboard-expense:hover { background:#f9fafb; }
 .item-arrow { color:var(--muted); font-size:20px; margin-left:8px; }
+
+.stat-popup-trigger { text-align:left; font:inherit; cursor:pointer; width:100%; }
+.stat-popup-trigger:hover { box-shadow:0 8px 22px rgba(17,24,39,.08); }
+.stat-modal-card { max-width:460px; }
+.stat-modal-body { padding-top:4px; }
+.stat-modal-body p { color:var(--muted); line-height:1.6; margin-bottom:22px; }
