@@ -17,7 +17,6 @@ SplitSmart is a full-stack shared-expense management application for tracking ex
 - Automated API tests for authentication, expense validation, balance calculations, and debt simplification
 - Dockerized Django and MySQL development environment using Docker Compose
 - GitHub Actions CI workflow that automatically runs the test suite on pushes and pull requests
-- Sign-in and sign-out functionality
 
 ## Tech Stack
 
@@ -47,7 +46,7 @@ SplitSmart calculates each participant's share and determines the resulting net 
 
 The application then uses a greedy debt-simplification algorithm to match debtors with creditors and generate straightforward repayment suggestions.
 
-## API
+## REST API
 
 The backend exposes REST endpoints for:
 
