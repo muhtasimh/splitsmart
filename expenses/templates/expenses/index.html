@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=8">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=9">
 </head>
 <body>
 <aside class="sidebar">
@@ -25,10 +25,10 @@
         <div><h1>Dashboard</h1><p class="subtitle">Track shared expenses, balances, and repayments.</p></div>
     </header>
     <section class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total expenses</div><div class="stat-value" id="totalExpenses">$0.00</div><div class="stat-note">Across your groups</div></div>
-        <div class="stat-card"><div class="stat-label">You are owed</div><div class="stat-value positive" id="totalOwed">$0.00</div><div class="stat-note">Outstanding balance</div></div>
-        <div class="stat-card"><div class="stat-label">You owe</div><div class="stat-value negative" id="totalOwe">$0.00</div><div class="stat-note">Outstanding balance</div></div>
-        <div class="stat-card"><div class="stat-label">Active groups</div><div class="stat-value" id="groupCount">0</div><div class="stat-note">Shared expense groups</div></div>
+        <button class="stat-card expandable-stat" data-stat="expenses"><div class="stat-label">Total expenses</div><div class="stat-value" id="totalExpenses">$0.00</div><div class="stat-note">Across your groups</div><div class="stat-details"><span id="expenseDetail">View your recorded purchases.</span><span class="stat-link" data-go="expenses">Check Expenses →</span></div></button>
+        <button class="stat-card expandable-stat" data-stat="owed"><div class="stat-label">You are owed</div><div class="stat-value positive" id="totalOwed">$0.00</div><div class="stat-note">Outstanding balance</div><div class="stat-details"><span>Money other members currently owe you.</span><span class="stat-link" data-go="settlements">Check Settlements →</span></div></button>
+        <button class="stat-card expandable-stat" data-stat="owe"><div class="stat-label">You owe</div><div class="stat-value negative" id="totalOwe">$0.00</div><div class="stat-note">Outstanding balance</div><div class="stat-details"><span>Money you currently owe other members.</span><span class="stat-link" data-go="settlements">Check Settlements →</span></div></button>
+        <button class="stat-card expandable-stat" data-stat="groups"><div class="stat-label">Active groups</div><div class="stat-value" id="groupCount">0</div><div class="stat-note">Shared expense groups</div><div class="stat-details"><span id="groupDetail">Groups you currently share expenses with.</span><span class="stat-link" data-go="groups">Check Groups →</span></div></button>
     </section>
     <section class="dashboard-grid">
         <div class="panel"><div class="panel-header"><div><h2>Recent expenses</h2><p>Your latest shared purchases</p></div></div><div class="expense-list" id="dashboardExpenseList"><div class="empty-state">Loading expenses...</div></div></div>
@@ -77,6 +77,6 @@
     <div class="brand-icon">$</div><h2>Welcome to SplitSmart</h2><p>Sign in to manage your shared expenses.</p>
     <form id="loginForm"><input id="loginUsername" type="text" placeholder="Username" required><input id="loginPassword" type="password" placeholder="Password" required><button class="add-expense-button full-width" type="submit">Sign in</button><p class="form-message" id="loginMessage"></p></form>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=8"></script>
+<script src="{% static 'expenses/app.js' %}?v=9"></script>
 </body>
 </html>
