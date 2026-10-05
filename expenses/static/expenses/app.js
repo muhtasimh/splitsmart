@@ -1,283 +1,141 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const addExpenseButton = document.getElementById("addExpenseButton")
-    const expenseModal = document.getElementById("expenseModal")
-    const closeModal = document.getElementById("closeModal")
-
+    const token = () => localStorage.getItem("splitsmartToken")
+    const authHeaders = () => ({ "Authorization": `Token ${token()}` })
     const loginOverlay = document.getElementById("loginOverlay")
-    const loginForm = document.getElementById("loginForm")
-    const loginMessage = document.getElementById("loginMessage")
-    const logoutButton = document.getElementById("logoutButton")
-    const expenseSearch = document.getElementById("expenseSearch")
+    const expenseModal = document.getElementById("expenseModal")
+    const groupModal = document.getElementById("groupModal")
 
-    expenseSearch.addEventListener("input", () => {
-    loadExpenses(expenseSearch.value.trim())
-})
-
-logoutButton.addEventListener("click", () => {
-    localStorage.removeItem("splitsmartToken")
-    loginOverlay.classList.remove("hidden")
-})
-
-loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault()
-
-    const username = document.getElementById("loginUsername").value
-    const password = document.getElementById("loginPassword").value
-
-    const response = await fetch("/api/token/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            username: username,
-            password: password
-        })
-    })
-
-    if (!response.ok) {
-        loginMessage.textContent = "Invalid username or password."
-        return
+    function showView(name) {
+        document.querySelectorAll(".app-view").forEach(view => view.classList.remove("active"))
+        document.querySelectorAll(".nav-item").forEach(item => item.classList.toggle("active", item.dataset.view === name))
+        document.getElementById(`${name}View`).classList.add("active")
+        window.location.hash = name === "dashboard" ? "" : name
     }
 
-    const data = await response.json()
+    document.querySelectorAll(".nav-item").forEach(item => item.addEventListener("click", () => showView(item.dataset.view)))
+    const initialView = ["expenses", "groups", "settlements"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard"
+    showView(initialView)
 
-    localStorage.setItem("splitsmartToken", data.token)
-    loginOverlay.classList.add("hidden")
-})
-
-async function loadGroups() {
-    const token = localStorage.getItem("splitsmartToken")
-
-    const response = await fetch("/api/groups/", {
-        headers: {
-            "Authorization": `Token ${token}`
-        }
-    })
-
-    if (!response.ok) {
+    document.getElementById("logoutButton").addEventListener("click", () => {
+        localStorage.removeItem("splitsmartToken")
         loginOverlay.classList.remove("hidden")
-        return
-    }
-
-    const groups = await response.json()
-
-    document.getElementById("groupCount").textContent = groups.length
-
-    const groupList = document.getElementById("groupList")
-
-groupList.innerHTML = groups.map(group => `
-    <div class="group-item" onclick="loadDebts(${group.id})">
-        <div>
-            <strong>${group.name}</strong>
-            <span>${group.members.length} members</span>
-        </div>
-        <span>›</span>
-    </div>
-`).join("")
-}
-
-loadGroups()
-
-async function populateExpenseForm() {
-    const token = localStorage.getItem("splitsmartToken")
-
-    const [groupsResponse, usersResponse] = await Promise.all([
-        fetch("/api/groups/", {
-            headers: { "Authorization": `Token ${token}` }
-        }),
-        fetch("/api/users/", {
-            headers: { "Authorization": `Token ${token}` }
-        })
-    ])
-
-    const groups = await groupsResponse.json()
-    const users = await usersResponse.json()
-
-    document.getElementById("groupSelect").innerHTML = groups.map(group =>
-        `<option value="${group.id}">${group.name}</option>`
-    ).join("")
-
-    document.getElementById("payerSelect").innerHTML = users.map(user =>
-        `<option value="${user.id}">${user.username}</option>`
-    ).join("")
-
-    document.getElementById("participantSelect").innerHTML = users.map(user =>
-        `<option value="${user.id}">${user.username}</option>`
-    ).join("")
-}
-
-populateExpenseForm()
-
-const expenseForm = document.getElementById("expenseForm")
-const formMessage = document.getElementById("formMessage")
-
-expenseForm.addEventListener("submit", async (event) => {
-    event.preventDefault()
-
-    const token = localStorage.getItem("splitsmartToken")
-
-    const participants = Array.from(
-        document.getElementById("participantSelect").selectedOptions
-    ).map(option => Number(option.value))
-
-    const response = await fetch("/api/expenses/", {
-        method: "POST",
-        headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            description: document.getElementById("description").value,
-            amount: document.getElementById("amount").value,
-            group: Number(document.getElementById("groupSelect").value),
-            paid_by: Number(document.getElementById("payerSelect").value),
-            participants: participants
-        })
     })
 
-    if (!response.ok) {
-        const error = await response.json()
-        console.log(error)
-        formMessage.textContent = "Could not save expense."
-        return
+    document.getElementById("loginForm").addEventListener("submit", async event => {
+        event.preventDefault()
+        const response = await fetch("/api/token/", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: loginUsername.value, password: loginPassword.value })
+        })
+        if (!response.ok) { loginMessage.textContent = "Invalid username or password."; return }
+        const data = await response.json()
+        localStorage.setItem("splitsmartToken", data.token)
+        loginOverlay.classList.add("hidden")
+        loginMessage.textContent = ""
+        await refreshAll()
+    })
+
+    async function getUsers() {
+        const response = await fetch("/api/users/", { headers: authHeaders() })
+        return response.ok ? response.json() : []
     }
 
-    expenseForm.reset()
-    expenseModal.classList.add("hidden")
+    async function loadGroups() {
+        const response = await fetch("/api/groups/", { headers: authHeaders() })
+        if (!response.ok) { loginOverlay.classList.remove("hidden"); return [] }
+        const groups = await response.json()
+        groupCount.textContent = groups.length
+        const markup = groups.length ? groups.map(group => `
+            <button class="group-item" data-group-id="${group.id}">
+                <div><strong>${group.name}</strong><span>${group.members.length} member${group.members.length === 1 ? "" : "s"}</span></div><span>›</span>
+            </button>`).join("") : '<div class="empty-state">No groups yet. Create your first group.</div>'
+        dashboardGroupList.innerHTML = markup
+        groupsPageList.innerHTML = markup
+        settlementGroupList.innerHTML = markup
+        document.querySelectorAll("[data-group-id]").forEach(el => el.addEventListener("click", async () => {
+            showView("settlements")
+            await loadDebts(el.dataset.groupId)
+        }))
+        return groups
+    }
 
-    await loadExpenses()
-    await loadBalances()
+    async function populateForms(groups) {
+        const users = await getUsers()
+        groupSelect.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join("")
+        payerSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
+        participantSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
+        groupMembers.innerHTML = users.map(u => `<option value="${u.id}">${u.username}</option>`).join("")
+    }
+
+    async function loadExpenses(search = "") {
+        const response = await fetch(`/api/expenses/?search=${encodeURIComponent(search)}`, { headers: authHeaders() })
+        if (!response.ok) return []
+        const expenses = await response.json()
+        if (!search) totalExpenses.textContent = `$${expenses.reduce((sum, e) => sum + Number(e.amount), 0).toFixed(2)}`
+        const markup = expenses.length ? expenses.map(e => `<div class="expense-item"><div><strong>${e.description}</strong><span>Shared expense</span></div><strong>$${Number(e.amount).toFixed(2)}</strong></div>`).join("") : '<div class="empty-state">No expenses found.</div>'
+        expenseList.innerHTML = markup
+        if (!search) dashboardExpenseList.innerHTML = markup
+        return expenses
+    }
+
+    async function loadBalances(groups) {
+        const meResponse = await fetch("/api/me/", { headers: authHeaders() })
+        if (!meResponse.ok) return
+        const me = await meResponse.json()
+        let total = 0
+        for (const group of groups) {
+            const response = await fetch(`/api/groups/${group.id}/balances/`, { headers: authHeaders() })
+            if (!response.ok) continue
+            const balances = await response.json()
+            const mine = balances.find(b => b.user_id === me.id)
+            if (mine) total += Number(mine.balance)
+        }
+        totalOwed.textContent = `$${Math.max(total, 0).toFixed(2)}`
+        totalOwe.textContent = `$${Math.max(-total, 0).toFixed(2)}`
+    }
+
+    async function loadDebts(groupId) {
+        const response = await fetch(`/api/groups/${groupId}/debts/`, { headers: authHeaders() })
+        if (!response.ok) return
+        const debts = await response.json()
+        debtList.innerHTML = debts.length ? debts.map(d => `<div class="debt-item"><strong>${d.from}</strong><span>pays</span><strong>${d.to}</strong><strong>$${Number(d.amount).toFixed(2)}</strong></div>`).join("") : '<div class="empty-state">Everyone in this group is settled up.</div>'
+    }
+
+    async function refreshAll() {
+        if (!token()) { loginOverlay.classList.remove("hidden"); return }
+        const groups = await loadGroups()
+        await Promise.all([loadExpenses(), populateForms(groups), loadBalances(groups)])
+    }
+
+    expenseSearch.addEventListener("input", () => loadExpenses(expenseSearch.value.trim()))
+    document.querySelectorAll(".open-expense").forEach(button => button.addEventListener("click", () => expenseModal.classList.remove("hidden")))
+    closeExpenseModal.addEventListener("click", () => expenseModal.classList.add("hidden"))
+    openGroupModal.addEventListener("click", () => groupModal.classList.remove("hidden"))
+    closeGroupModal.addEventListener("click", () => groupModal.classList.add("hidden"))
+    ;[expenseModal, groupModal].forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) modal.classList.add("hidden") }))
+
+    expenseForm.addEventListener("submit", async event => {
+        event.preventDefault()
+        const participants = Array.from(participantSelect.selectedOptions).map(o => Number(o.value))
+        const response = await fetch("/api/expenses/", {
+            method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ description: description.value, amount: amount.value, group: Number(groupSelect.value), paid_by: Number(payerSelect.value), participants })
+        })
+        if (!response.ok) { formMessage.textContent = "Could not save expense."; return }
+        expenseForm.reset(); expenseModal.classList.add("hidden"); formMessage.textContent = ""; await refreshAll()
+    })
+
+    groupForm.addEventListener("submit", async event => {
+        event.preventDefault()
+        const members = Array.from(groupMembers.selectedOptions).map(o => Number(o.value))
+        if (!members.length) { groupFormMessage.textContent = "Select at least one member."; return }
+        const response = await fetch("/api/groups/", {
+            method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ name: groupName.value.trim(), members })
+        })
+        if (!response.ok) { groupFormMessage.textContent = "Could not create group."; return }
+        groupForm.reset(); groupModal.classList.add("hidden"); groupFormMessage.textContent = ""; await refreshAll()
+    })
+
+    refreshAll()
 })
-
-async function loadBalances() {
-    const token = localStorage.getItem("splitsmartToken")
-
-    const meResponse = await fetch("/api/me/", {
-        headers: {
-            "Authorization": `Token ${token}`
-        }
-    })
-
-    const me = await meResponse.json()
-
-    const groupsResponse = await fetch("/api/groups/", {
-        headers: {
-            "Authorization": `Token ${token}`
-        }
-    })
-
-    const groups = await groupsResponse.json()
-
-    let totalBalance = 0
-
-    for (const group of groups) {
-        const balanceResponse = await fetch(`/api/groups/${group.id}/balances/`, {
-            headers: {
-                "Authorization": `Token ${token}`
-            }
-        })
-
-        const balances = await balanceResponse.json()
-
-        const myBalance = balances.find(
-            balance => balance.user_id === me.id
-        )
-
-        if (myBalance) {
-            totalBalance += Number(myBalance.balance)
-        }
-    }
-
-    document.getElementById("totalOwed").textContent =
-        `$${Math.max(totalBalance, 0).toFixed(2)}`
-
-    document.getElementById("totalOwe").textContent =
-        `$${Math.max(-totalBalance, 0).toFixed(2)}`
-}
-
-loadBalances()
-
-window.loadDebts = async function(groupId) {
-    const token = localStorage.getItem("splitsmartToken")
-
-    const response = await fetch(`/api/groups/${groupId}/debts/`, {
-        headers: {
-            "Authorization": `Token ${token}`
-        }
-    })
-
-    const debts = await response.json()
-
-    const debtList = document.getElementById("debtList")
-
-debtList.innerHTML = debts.map(debt => `
-    <div class="debt-item">
-        <strong>${debt.from}</strong>
-        <span>pays</span>
-        <strong>${debt.to}</strong>
-        <strong>$${Number(debt.amount).toFixed(2)}</strong>
-    </div>
-`).join("")
-}
-
-async function loadExpenses(search = "") {
-    const token = localStorage.getItem("splitsmartToken")
-
-    const response = await fetch(
-        `/api/expenses/?search=${encodeURIComponent(search)}`,
-        {
-            headers: {
-                "Authorization": `Token ${token}`
-            }
-        }
-    )
-
-    const expenses = await response.json()
-
-    if (search === "") {
-        const totalExpenses = expenses.reduce((total, expense) => {
-            return total + Number(expense.amount)
-        }, 0)
-
-        document.getElementById("totalExpenses").textContent =
-            `$${totalExpenses.toFixed(2)}`
-    }
-
-    const expenseList = document.getElementById("expenseList")
-
-    if (expenses.length === 0) {
-    expenseList.innerHTML = `
-        <div class="empty-state">
-            No expenses found.
-        </div>
-    `
-} else {
-    expenseList.innerHTML = expenses.map(expense => `
-        <div class="expense-item">
-            <div>
-                <strong>${expense.description}</strong>
-                <span>Shared expense</span>
-            </div>
-            <strong>$${Number(expense.amount).toFixed(2)}</strong>
-        </div>
-    `).join("")
-}}
-
-loadExpenses()
-
-    addExpenseButton.addEventListener("click", () => {
-        expenseModal.classList.remove("hidden")
-    })
-
-    closeModal.addEventListener("click", () => {
-        expenseModal.classList.add("hidden")
-    })
-
-    expenseModal.addEventListener("click", (event) => {
-        if (event.target === expenseModal) {
-            expenseModal.classList.add("hidden")
-        }
-    })
-
-    })
