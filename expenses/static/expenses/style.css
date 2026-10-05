@@ -609,3 +609,12 @@ body {
 
 /* Expense management actions stay horizontal on the Expenses page. */
 .expense-right .row-actions { flex-direction: row; flex-wrap: nowrap; }
+
+.expandable-stat { text-align:left; font:inherit; cursor:pointer; width:100%; }
+.expandable-stat:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(17,24,39,.08); }
+.stat-details { display:none; border-top:1px solid var(--border); margin-top:14px; padding-top:12px; color:var(--muted); font-size:13px; line-height:1.45; }
+.expandable-stat.expanded .stat-details { display:flex; flex-direction:column; gap:10px; }
+.stat-link { color:var(--primary); font-weight:700; width:max-content; }
+.dashboard-expense { width:100%; border:0; background:transparent; text-align:left; font:inherit; cursor:pointer; }
+.dashboard-expense:hover { background:#f9fafb; }
+.item-arrow { color:var(--muted); font-size:20px; margin-left:8px; }
