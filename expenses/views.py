@@ -85,6 +85,25 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
             if debtors[di][1] == 0: di += 1
         return debts
 
+    @action(detail=False, methods=["get"], url_path="my-balance")
+    def my_balance(self, request):
+        total = Decimal("0.00")
+        for group in self.get_queryset():
+            balances = self._balance_map(group)
+            member = group.members.filter(user=request.user).first()
+            if member is None:
+                member = group.members.filter(name__iexact=request.user.username).first()
+                if member is not None and member.user_id is None:
+                    member.user = request.user
+                    member.save(update_fields=["user"])
+            if member is not None:
+                total += balances.get(member.id, Decimal("0.00"))
+        return Response({
+            "balance": round(total, 2),
+            "owed": round(max(total, Decimal("0.00")), 2),
+            "owe": round(max(-total, Decimal("0.00")), 2),
+        })
+
     @action(detail=True, methods=["get"])
     def balances(self, request, pk=None):
         return Response(self._balances(self.get_object()))
