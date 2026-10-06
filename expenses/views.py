@@ -35,6 +35,13 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return self.owner_groups().prefetch_related("members").distinct()
 
+    def perform_destroy(self, instance):
+        # Member foreign keys use PROTECT, so remove the group's dependent
+        # records first and then delete the group itself.
+        instance.settlements.all().delete()
+        instance.expenses.all().delete()
+        instance.delete()
+
     @action(detail=True, methods=["get"])
     def details(self, request, pk=None):
         group = self.get_object()
