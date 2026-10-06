@@ -10,6 +10,11 @@ on:
       - main
   workflow_dispatch:
 
+# Prevent overlapping deployments to the same Azure App Service.
+concurrency:
+  group: splitsmart-production
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
