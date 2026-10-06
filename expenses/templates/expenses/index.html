@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=16">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=17">
 </head>
 <body>
 <aside class="sidebar">
@@ -70,7 +70,7 @@
 </div></div>
 
 <div class="modal hidden" id="groupModal"><div class="modal-card">
-    <div class="modal-header"><div><h2 id="groupModalTitle">Create group</h2><p>Name the group and select its members.</p></div><button class="close-button" id="closeGroupModal">&times;</button></div>
+    <div class="modal-header"><div><h2 id="groupModalTitle">Create group</h2><p id="groupModalSubtitle">Name the group and select its members.</p></div><button class="close-button" id="closeGroupModal">&times;</button></div>
     <form id="groupForm"><input id="groupId" type="hidden">
         <label>Group name<input id="groupName" type="text" placeholder="Roommates" required></label>
         <label>Members <span class="label-note">one name per line</span><textarea id="groupMembers" rows="6" placeholder="You&#10;Alex&#10;Jordan" required></textarea></label>
@@ -82,6 +82,6 @@
     <div class="brand-icon">$</div><h2>Welcome to SplitSmart</h2><p>Sign in to manage your shared expenses.</p>
     <form id="loginForm"><input id="loginUsername" type="text" placeholder="Username" required><input id="loginPassword" type="password" placeholder="Password" required><button class="add-expense-button full-width" type="submit">Sign in</button><p class="form-message" id="loginMessage"></p></form>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=16"></script>
+<script src="{% static 'expenses/app.js' %}?v=17"></script>
 </body>
 </html>
