@@ -13,6 +13,20 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("token", response.data)
 
+    def test_registration_returns_token(self):
+        response = self.client.post("/api/register/", {"username":"newuser","password":"simple","confirm_password":"simple"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("token", response.data)
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+
+    def test_registration_rejects_mismatched_passwords(self):
+        response = self.client.post("/api/register/", {"username":"newuser","password":"one","confirm_password":"two"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_registration_rejects_duplicate_username(self):
+        response = self.client.post("/api/register/", {"username":"TESTUSER","password":"simple","confirm_password":"simple"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_invalid_login_rejected(self):
         response = self.client.post("/api/token/", {"username":"testuser","password":"wrongpassword"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
