@@ -85,6 +85,29 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
             if debtors[di][1] == 0: di += 1
         return debts
 
+    @action(detail=False, methods=["get"], url_path="identity-debug")
+    def identity_debug(self, request):
+        groups = []
+        for group in self.get_queryset():
+            balances = self._balance_map(group)
+            groups.append({
+                "group_id": group.id,
+                "group_name": group.name,
+                "owner_user_id": group.owner_id,
+                "signed_in_user_id": request.user.id,
+                "signed_in_username": request.user.username,
+                "members": [
+                    {
+                        "id": member.id,
+                        "name": member.name,
+                        "linked_user_id": member.user_id,
+                        "balance": round(balances.get(member.id, Decimal("0.00")), 2),
+                    }
+                    for member in group.members.all()
+                ],
+            })
+        return Response({"groups": groups})
+
     @action(detail=False, methods=["get"], url_path="my-balance")
     def my_balance(self, request):
         total = Decimal("0.00")
