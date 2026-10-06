@@ -37,6 +37,10 @@ class GroupSerializer(serializers.ModelSerializer):
             member = existing.get(name.lower())
             if member is None:
                 member = Member.objects.create(group=group, name=name)
+            request = self.context.get("request")
+            if request and request.user.is_authenticated and name.lower() == request.user.username.lower() and member.user_id != request.user.id:
+                member.user = request.user
+                member.save(update_fields=["user"])
             keep_ids.append(member.id)
         for member in group.members.exclude(id__in=keep_ids):
             if member.paid_expenses.exists() or member.shared_expenses.exists() or member.settlements_paid.exists() or member.settlements_received.exists():
