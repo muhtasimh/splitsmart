@@ -23,31 +23,27 @@ $("groupSelect").onchange=updateExpenseMembers;
 async function loadBalances(){const r=await api("/api/groups/my-balance/");if(!r.ok)return;const b=await r.json();$("totalOwed").textContent="$"+Number(b.owed||0).toFixed(2);$("totalOwe").textContent="$"+Number(b.owe||0).toFixed(2)}
 function bindGroupActions(){document.querySelectorAll("[data-open-group]").forEach(b=>b.onclick=e=>{e.preventDefault();const id=Number(b.dataset.openGroup);if(b.dataset.mode==="manage")openGroupModal(id);else if(b.dataset.mode==="landing"){selectedGroup=null;$("groupDetails").innerHTML="";$("debtList").innerHTML="";showView("settlements")}else openDetails(id,b.dataset.mode)})}
 async function openDetails(id,mode){if(mode==="details"&&selectedGroup===id&&$("groupDetails").innerHTML.trim()){selectedGroup=null;$("groupDetails").innerHTML="";$("debtList").innerHTML="";return}selectedGroup=id;showView(mode==="details"?"settlements":"groups");const r=await api(`/api/groups/${id}/details/`);if(!r.ok)return;const d=await r.json();$("groupDetails").innerHTML=`<div class="detail-card"><h3>${esc(d.group.name)}</h3><p><strong>Members:</strong> ${d.group.members.map(m=>esc(m.name)).join(", ")}</p><div class="balance-grid">${d.balances.map(b=>`<span>${esc(b.name)}: <strong>$${Number(b.balance).toFixed(2)}</strong></span>`).join("")}</div><h4>Group expenses</h4>${expenseMarkup(d.expenses,false)}</div>`;$("debtList").innerHTML=d.debts.length?d.debts.map(x=>`<div class="debt-item"><strong>${esc(x.from)}</strong><span>pays</span><strong>${esc(x.to)}</strong><strong>$${Number(x.amount).toFixed(2)}</strong></div>`).join(""):'<div class="empty-state">Everyone in this group is settled up.</div>';bindExpenseActions()}
-let groupMemberDraft=[];
-function renderMemberEditor(){
-  $("memberRows").innerHTML=groupMemberDraft.map((m,i)=>`<div class="member-edit-row">
-    <input class="member-name-input" data-member-index="${i}" value="${esc(m.name)}" placeholder="Member name" aria-label="Member name">
-    <button type="button" class="member-you-button ${m.isYou?"active":""}" data-you-index="${i}">${m.isYou?"✓ You":"This is me"}</button>
-    <button type="button" class="member-remove-button" data-remove-index="${i}" aria-label="Remove member">&times;</button>
-  </div>`).join("");
-  document.querySelectorAll("[data-member-index]").forEach(input=>input.oninput=()=>{groupMemberDraft[Number(input.dataset.memberIndex)].name=input.value});
-  document.querySelectorAll("[data-you-index]").forEach(button=>button.onclick=()=>{const i=Number(button.dataset.youIndex),was=groupMemberDraft[i].isYou;groupMemberDraft.forEach(m=>m.isYou=false);groupMemberDraft[i].isYou=!was;renderMemberEditor()});
-  document.querySelectorAll("[data-remove-index]").forEach(button=>button.onclick=()=>{groupMemberDraft.splice(Number(button.dataset.removeIndex),1);renderMemberEditor()});
+function syncCurrentMemberOptions(selected=""){
+  const names=$("groupMembers").value.split("\n").map(n=>n.trim()).filter(Boolean);
+  $("currentMemberSelect").innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(selected&&names.includes(selected))$("currentMemberSelect").value=selected;
+  $("currentMemberField").classList.toggle("hidden",$("groupParticipation").value==="no");
 }
-function addMemberRow(name="",isYou=false){groupMemberDraft.push({name,isYou});renderMemberEditor();const inputs=document.querySelectorAll(".member-name-input");if(!name&&inputs.length)inputs[inputs.length-1].focus()}
-$("addMemberButton").onclick=()=>addMemberRow();
+$("groupMembers").oninput=()=>syncCurrentMemberOptions($("currentMemberSelect").value);
+$("groupParticipation").onchange=()=>syncCurrentMemberOptions($("currentMemberSelect").value);
 function openGroupModal(id=null){
   const g=groups.find(x=>x.id===id);
   $("groupId").value=id||"";
   $("groupModalTitle").textContent=g?"Manage group":"Create group";
-  $("groupModalSubtitle").textContent=g?"Update the group name, members, or which member is you.":"Name the group and add the people who share its expenses.";
+  $("groupModalSubtitle").textContent=g?"Update the group name, members, or your participation.":"Name the group and add the people who share its expenses.";
   $("groupSubmitButton").textContent=g?"Save changes":"Create group";
   $("deleteGroupButton").classList.toggle("hidden",!g);
   $("deleteGroupButton").dataset.id=id||"";
   $("groupName").value=g?.name||"";
-  const linkedId=g?.members.find(m=>m.user===currentUserId)?.id;
-  groupMemberDraft=g?g.members.map(m=>({name:m.name,isYou:m.id===linkedId})):[{name:"",isYou:false}];
-  renderMemberEditor();
+  $("groupMembers").value=g?g.members.map(m=>m.name).join("\n"):"";
+  const linked=g?.members.find(m=>m.user===currentUserId);
+  $("groupParticipation").value=linked?"yes":"no";
+  syncCurrentMemberOptions(linked?.name||"");
   $("groupFormMessage").textContent="";
   $("groupModal").classList.remove("hidden");
 }
@@ -55,17 +51,15 @@ async function deleteGroup(id){const g=groups.find(x=>x.id===id);if(!confirm(`De
 $("groupForm").onsubmit=async e=>{
   e.preventDefault();
   const id=$("groupId").value;
-  const cleaned=groupMemberDraft.map(m=>({...m,name:m.name.trim()})).filter(m=>m.name);
-  const names=cleaned.map(m=>m.name);
+  const names=$("groupMembers").value.split("\n").map(n=>n.trim()).filter(Boolean);
   if(!names.length){$("groupFormMessage").textContent="Add at least one member.";return}
   if(new Set(names.map(n=>n.toLowerCase())).size!==names.length){$("groupFormMessage").textContent="Member names must be unique.";return}
-  const you=cleaned.find(m=>m.isYou);
-  const body={name:$("groupName").value.trim(),member_names:names,current_member_name:you?.name||""};
+  const participating=$("groupParticipation").value==="yes";
+  if(participating&&!$("currentMemberSelect").value){$("groupFormMessage").textContent="Choose who you are in this group.";return}
+  const body={name:$("groupName").value.trim(),member_names:names,current_member_name:participating?$("currentMemberSelect").value:""};
   const r=await api(id?`/api/groups/${id}/`:"/api/groups/",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){const data=await r.json().catch(()=>({}));$("groupFormMessage").textContent=data.current_member_name?.[0]||"Could not save group.";return}
-  $("groupModal").classList.add("hidden");
-  $("groupForm").reset();
-  await refreshAll()
+  $("groupModal").classList.add("hidden");$("groupForm").reset();await refreshAll()
 };
 function openExpenseModal(id=null){const e=expenses.find(x=>x.id===id);$("expenseId").value=id||"";$("expenseModalTitle").textContent=e?"Manage expense":"Add expense";$("expenseModalSubtitle").textContent=e?"Update the details of this shared expense.":"Record a shared purchase.";$("expenseSubmitButton").textContent=e?"Save changes":"Add expense";$("deleteExpenseButton").classList.toggle("hidden",!e);$("deleteExpenseButton").dataset.id=id||"";if(e){$("description").value=e.description;$("amount").value=e.amount;$("groupSelect").value=e.group;updateExpenseMembers();$("payerSelect").value=e.paid_by;Array.from($("participantSelect").options).forEach(o=>o.selected=e.participants.includes(Number(o.value)))}else{$("expenseForm").reset();populateGroupSelect()}$("expenseModal").classList.remove("hidden")}
 function bindExpenseActions(){document.querySelectorAll("[data-manage-expense]").forEach(b=>b.onclick=()=>openExpenseModal(Number(b.dataset.manageExpense)))}
