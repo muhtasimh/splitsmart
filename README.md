@@ -1,94 +1,50 @@
 # SplitSmart
 
-SplitSmart is a full-stack shared-expense web application for organizing group expenses, calculating each person's net balance, and producing simplified repayment suggestions.
+SplitSmart is a full-stack shared-expense application for organizing group expenses, tracking personal balances, and simplifying repayments.
 
-**Live app:** https://splitsmart-muhtasimh-hndbbtaegzcxe9ge.canadacentral-01.azurewebsites.net/
+## Live Demo
 
-## What it does
+**[Open SplitSmart](https://splitsmart-muhtasimh-hndbbtaegzcxe9ge.canadacentral-01.azurewebsites.net/)**
 
-- Account registration and token-based authentication
-- Private, account-isolated groups and expenses
-- Groups can contain people who do not have SplitSmart accounts
-- Group owners can identify which member represents them, or manage a group without participating
-- Create, edit, search, and delete shared expenses
-- Choose the payer and participants for each expense
-- Dashboard totals for expenses, money owed to you, money you owe, and active groups
-- Per-member balance calculation and simplified repayment suggestions
+The application is deployed on Microsoft Azure App Service with a MySQL database hosted on Aiven.
+
+## Features
+
+- Create and manage shared-expense groups and members
+- Add, edit, search, and delete expenses
+- Select who paid and who participated in each expense
+- Track how much you owe and how much you are owed
+- Calculate per-member balances and simplified repayments
+- Account registration, authentication, and private user data
 - Persistent MySQL storage
-- API validation and automated regression tests
-- Continuous integration with GitHub Actions
-- Production deployment on Azure App Service
+- Responsive dashboard for expenses, balances, and active groups
 
-## Tech stack
+## Development
 
-**Backend:** Python, Django, Django REST Framework, MySQL  
-**Frontend:** JavaScript, HTML, CSS  
-**Infrastructure:** Azure App Service, Aiven MySQL, GitHub Actions  
-**Development:** Git, GitHub, Docker, Docker Compose, Django REST Framework APITestCase
+- REST API built with Django REST Framework
+- Automated API testing covering authentication, account isolation, expense CRUD, group management, and balance calculations
+- CI/CD with GitHub Actions
+- Production deployment on Microsoft Azure App Service
+- Cloud database integration with Aiven MySQL
 
-## Architecture
+## Tech Stack
 
-The browser UI communicates with a Django REST Framework API. Django owns authentication, authorization, validation, balance calculations, and settlement logic. MySQL stores users, groups, members, expenses, participants, and recorded settlements.
+### Frontend
 
-A group is owned by one SplitSmart account but its members are independent records, so names inside a group do not have to match account usernames. When the owner participates in a group, an explicit account-to-member link lets the dashboard calculate that user's personal balance correctly.
+- JavaScript
+- HTML
+- CSS
 
-Each expense stores:
+### Backend
 
-- the group
-- a description and amount
-- the member who paid
-- the members who participated
+- Python
+- Django
+- Django REST Framework
+- MySQL
 
-For an expense, SplitSmart credits the payer with the full amount and subtracts an equal share from each participant. Recorded settlements are then applied to those balances. Positive balances mean a member should receive money; negative balances mean they owe money.
+### Testing & Deployment
 
-The settlement view uses a greedy matching algorithm to pair debtors with creditors and produce a smaller, straightforward set of repayments.
-
-## Main API capabilities
-
-The REST API supports:
-
-- authentication and registration
-- groups and group membership
-- expenses
-- settlements
-- group details and balances
-- personal dashboard balance
-- simplified debts/repayments
-- search and filtering
-
-Protected resources are scoped to the authenticated account so one account cannot access another account's groups or expenses.
-
-## Validation and testing
-
-The API validates that expense amounts are positive, participants are present, and payers/participants belong to the selected group.
-
-The automated test suite covers authentication, registration, account isolation, expense CRUD, invalid cross-group members, group editing/deletion, balance and debt calculations, explicit account-to-member identity, owners who are not group members, and changing/removing member identity.
-
-GitHub Actions runs the test suite on pushes and pull requests against a MySQL 8 service.
-
-## Local development
-
-Create environment variables for Django and MySQL:
-
-```text
-SECRET_KEY=your-development-secret
-DB_NAME=splitsmart
-DB_USER=your_mysql_user
-DB_PASSWORD=your_mysql_password
-DB_HOST=127.0.0.1
-DB_PORT=3306
-```
-
-Install dependencies and run migrations:
-
-```bash
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-Then open the local Django server in your browser.
-
-## Deployment
-
-The production application is deployed to Azure App Service. Production database credentials are supplied through environment variables and are not stored in the repository. Pushes to the deployment branch trigger the configured GitHub Actions workflow.
+- Django REST Framework APITestCase
+- GitHub Actions
+- Microsoft Azure App Service
+- Aiven MySQL
