@@ -73,7 +73,7 @@
     <div class="modal-header"><div><h2 id="groupModalTitle">Create group</h2><p id="groupModalSubtitle">Name the group and select its members.</p></div><button class="close-button" id="closeGroupModal">&times;</button></div>
     <form id="groupForm"><input id="groupId" type="hidden">
         <label>Group name<input id="groupName" type="text" placeholder="Roommates" required></label>
-        <label>Members <span class="label-note">one name per line</span><textarea id="groupMembers" rows="6" placeholder="You&#10;Alex&#10;Jordan" required></textarea></label>
+        <label>Members <span class="label-note">one name per line</span><textarea id="groupMembers" rows="6" placeholder="You&#10;Alex&#10;Jordan" required></textarea></label>\n        <label>Which member are you?<select id="currentMemberSelect" required></select></label>
         <div class="modal-management-actions"><button class="add-expense-button" id="groupSubmitButton" type="submit">Create group</button><button class="delete-modal-button hidden" id="deleteGroupButton" type="button">Delete group</button></div><p class="form-message" id="groupFormMessage"></p>
     </form>
 </div></div>
@@ -89,6 +89,6 @@
         <p class="auth-switch">Already have an account? <button type="button" id="showSignin">Sign in</button></p>
     </div>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=21"></script>
+<script src="{% static 'expenses/app.js' %}?v=22"></script>
 </body>
 </html>
