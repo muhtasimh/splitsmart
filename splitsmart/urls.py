@@ -8,6 +8,7 @@ from expenses.views import (
     SettlementViewSet,
     dashboard,
     me,
+    register,
 )
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -20,6 +21,7 @@ router.register("settlements", SettlementViewSet)
 urlpatterns = [
     path("", dashboard, name="dashboard"),
     path("api/me/", me, name="me"),
+    path("api/register/", register, name="register"),
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path("api/token/", obtain_auth_token),
