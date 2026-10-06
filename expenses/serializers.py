@@ -18,10 +18,11 @@ class MemberSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
     members = MemberSerializer(many=True, read_only=True)
     member_names = serializers.ListField(child=serializers.CharField(max_length=100), write_only=True, required=False)
+    current_member_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Group
-        fields = ["id", "name", "members", "member_names", "created_at"]
+        fields = ["id", "name", "members", "member_names", "current_member_name", "created_at"]
 
     def _sync_members(self, group, names):
         cleaned = []
@@ -47,21 +48,38 @@ class GroupSerializer(serializers.ModelSerializer):
                 continue
             member.delete()
 
+    def _link_current_member(self, group, member_name):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or not member_name:
+            return
+        member = group.members.filter(name__iexact=member_name.strip()).first()
+        if member is None:
+            raise serializers.ValidationError({"current_member_name": "Choose one of the group's members as yourself."})
+        group.members.filter(user=request.user).exclude(pk=member.pk).update(user=None)
+        if member.user_id != request.user.id:
+            member.user = request.user
+            member.save(update_fields=["user"])
+
     def create(self, validated_data):
         names = validated_data.pop("member_names", [])
+        current_member_name = validated_data.pop("current_member_name", "")
         request = self.context["request"]
         group = Group.objects.create(owner=request.user, **validated_data)
         if not names:
             names = [request.user.username]
         self._sync_members(group, names)
+        self._link_current_member(group, current_member_name or request.user.username)
         return group
 
     def update(self, instance, validated_data):
         names = validated_data.pop("member_names", None)
+        current_member_name = validated_data.pop("current_member_name", "")
         instance.name = validated_data.get("name", instance.name)
         instance.save()
         if names is not None:
             self._sync_members(instance, names)
+        if current_member_name:
+            self._link_current_member(instance, current_member_name)
         return instance
 
 
