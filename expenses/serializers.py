@@ -71,6 +71,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         names = validated_data.pop("member_names", None)
+        current_member_supplied = "current_member_name" in validated_data
         current_member_name = validated_data.pop("current_member_name", "")
         instance.name = validated_data.get("name", instance.name)
         instance.save()
