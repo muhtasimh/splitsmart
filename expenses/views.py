@@ -85,43 +85,20 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
             if debtors[di][1] == 0: di += 1
         return debts
 
-    @action(detail=False, methods=["get"], url_path="identity-debug")
-    def identity_debug(self, request):
-        groups = []
-        for group in self.get_queryset():
-            balances = self._balance_map(group)
-            groups.append({
-                "group_id": group.id,
-                "group_name": group.name,
-                "owner_user_id": group.owner_id,
-                "signed_in_user_id": request.user.id,
-                "signed_in_username": request.user.username,
-                "members": [
-                    {
-                        "id": member.id,
-                        "name": member.name,
-                        "linked_user_id": member.user_id,
-                        "balance": round(balances.get(member.id, Decimal("0.00")), 2),
-                    }
-                    for member in group.members.all()
-                ],
-            })
-        return Response({"groups": groups})
-
     @action(detail=False, methods=["get"], url_path="my-balance")
     def my_balance(self, request):
         total = Decimal("0.00")
         for group in self.get_queryset():
             balances = self._balance_map(group)
-            # Each group is private to its owner, so the owner's balance is
-            # represented by the member whose name matches the signed-in username.
-            # Prefer that deterministic mapping over a stale Member.user link left
-            # behind by older data.
-            member = group.members.filter(name__iexact=request.user.username).first()
-            if member is not None:
-                if member.user_id != request.user.id:
+            member = group.members.filter(user=request.user).first()
+            if member is None:
+                # Backward-compatible fallback for groups created before explicit
+                # "which member is you?" linking was added.
+                member = group.members.filter(name__iexact=request.user.username).first()
+                if member is not None:
                     member.user = request.user
                     member.save(update_fields=["user"])
+            if member is not None:
                 total += balances.get(member.id, Decimal("0.00"))
         return Response({
             "balance": round(total, 2),
