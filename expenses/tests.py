@@ -83,3 +83,20 @@ class WorkflowTests(APITestCase):
         self.assertIn("balances", response.data)
         self.assertIn("debts", response.data)
         self.assertIn("expenses", response.data)
+
+
+    def test_my_balance_uses_matching_username_when_stale_user_link_exists(self):
+        # Regression: old data could link the signed-in user to the wrong member.
+        trip = Group.objects.create(name="Trip", owner=self.user)
+        alex = Member.objects.create(group=trip, name="Alex", user=self.user)
+        muhtasim = Member.objects.create(group=trip, name="alice")
+        expense = Expense.objects.create(group=trip, description="Hotel", amount="200.00", paid_by=alex)
+        expense.participants.set([alex, muhtasim])
+
+        response = self.client.get("/api/groups/my-balance/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["owed"], 0)
+        self.assertEqual(response.data["owe"], 100)
+        muhtasim.refresh_from_db()
+        self.assertEqual(muhtasim.user_id, self.user.id)
