@@ -38,10 +38,6 @@ class GroupSerializer(serializers.ModelSerializer):
             member = existing.get(name.lower())
             if member is None:
                 member = Member.objects.create(group=group, name=name)
-            request = self.context.get("request")
-            if request and request.user.is_authenticated and name.lower() == request.user.username.lower() and member.user_id != request.user.id:
-                member.user = request.user
-                member.save(update_fields=["user"])
             keep_ids.append(member.id)
         for member in group.members.exclude(id__in=keep_ids):
             if member.paid_expenses.exists() or member.shared_expenses.exists() or member.settlements_paid.exists() or member.settlements_received.exists():
@@ -65,13 +61,12 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         names = validated_data.pop("member_names", [])
+        current_member_supplied = "current_member_name" in validated_data
         current_member_name = validated_data.pop("current_member_name", "")
         request = self.context["request"]
         group = Group.objects.create(owner=request.user, **validated_data)
-        if not names:
-            names = [request.user.username]
         self._sync_members(group, names)
-        self._link_current_member(group, current_member_name or request.user.username)
+        self._link_current_member(group, current_member_name)
         return group
 
     def update(self, instance, validated_data):
@@ -81,7 +76,7 @@ class GroupSerializer(serializers.ModelSerializer):
         instance.save()
         if names is not None:
             self._sync_members(instance, names)
-        if current_member_name:
+        if current_member_supplied:
             self._link_current_member(instance, current_member_name)
         return instance
 
