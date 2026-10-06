@@ -50,7 +50,10 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def _link_current_member(self, group, member_name):
         request = self.context.get("request")
-        if not request or not request.user.is_authenticated or not member_name:
+        if not request or not request.user.is_authenticated:
+            return
+        if not member_name:
+            group.members.filter(user=request.user).update(user=None)
             return
         member = group.members.filter(name__iexact=member_name.strip()).first()
         if member is None:
