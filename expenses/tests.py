@@ -76,6 +76,22 @@ class WorkflowTests(APITestCase):
         self.assertEqual(len(response.data["members"]), 3)
         self.assertEqual(self.client.delete(f"/api/groups/{self.group.id}/").status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_group_delete_cascades_expenses_with_protected_members(self):
+        expense = Expense.objects.create(
+            group=self.group,
+            description="Dinner",
+            amount="60.00",
+            paid_by=self.alice,
+        )
+        expense.participants.set([self.alice, self.bob])
+
+        response = self.client.delete(f"/api/groups/{self.group.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Group.objects.filter(pk=self.group.id).exists())
+        self.assertFalse(Expense.objects.filter(pk=expense.id).exists())
+        self.assertFalse(Member.objects.filter(group_id=self.group.id).exists())
+
     def test_group_details(self):
         Expense.objects.create(group=self.group, description="Dinner", amount="60.00", paid_by=self.alice).participants.set([self.alice,self.bob])
         response = self.client.get(f"/api/groups/{self.group.id}/details/")
