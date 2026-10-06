@@ -85,11 +85,10 @@ class WorkflowTests(APITestCase):
         self.assertIn("expenses", response.data)
 
 
-    def test_my_balance_uses_matching_username_when_stale_user_link_exists(self):
-        # Regression: old data could link the signed-in user to the wrong member.
+    def test_my_balance_uses_explicit_member_link_when_name_differs_from_username(self):
         trip = Group.objects.create(name="Trip", owner=self.user)
-        alex = Member.objects.create(group=trip, name="Alex", user=self.user)
-        muhtasim = Member.objects.create(group=trip, name="alice")
+        alex = Member.objects.create(group=trip, name="Alex")
+        muhtasim = Member.objects.create(group=trip, name="Muhtasim", user=self.user)
         expense = Expense.objects.create(group=trip, description="Hotel", amount="200.00", paid_by=alex)
         expense.participants.set([alex, muhtasim])
 
@@ -98,5 +97,14 @@ class WorkflowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["owed"], 0)
         self.assertEqual(response.data["owe"], 100)
-        muhtasim.refresh_from_db()
-        self.assertEqual(muhtasim.user_id, self.user.id)
+
+    def test_group_can_explicitly_link_current_member(self):
+        response = self.client.post("/api/groups/", {
+            "name": "Trip",
+            "member_names": ["Alex", "Muhtasim"],
+            "current_member_name": "Muhtasim",
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        member = Member.objects.get(group_id=response.data["id"], name="Muhtasim")
+        self.assertEqual(member.user_id, self.user.id)
