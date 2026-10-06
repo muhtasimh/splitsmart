@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=17">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=18">
 </head>
 <body>
 <aside class="sidebar">
@@ -79,9 +79,16 @@
 </div></div>
 
 <div class="login-overlay" id="loginOverlay"><div class="login-card">
-    <div class="brand-icon">$</div><h2>Welcome to SplitSmart</h2><p>Sign in to manage your shared expenses.</p>
-    <form id="loginForm"><input id="loginUsername" type="text" placeholder="Username" required><input id="loginPassword" type="password" placeholder="Password" required><button class="add-expense-button full-width" type="submit">Sign in</button><p class="form-message" id="loginMessage"></p></form>
+    <div class="auth-brand"><div class="brand-icon">$</div><span>SplitSmart</span></div>
+    <div id="signInPanel"><h2>Welcome back</h2><p>Sign in to manage your shared expenses.</p>
+        <form id="loginForm" class="auth-form"><label>Username<input id="loginUsername" type="text" autocomplete="username" placeholder="Enter your username" required></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required></label><button class="add-expense-button full-width" type="submit">Sign in</button><p class="form-message" id="loginMessage"></p></form>
+        <p class="auth-switch">New to SplitSmart? <button type="button" id="showSignup">Create an account</button></p>
+    </div>
+    <div id="signUpPanel" class="hidden"><h2>Create your account</h2><p>Choose a username and password to get started.</p>
+        <form id="signupForm" class="auth-form"><label>Username<input id="signupUsername" type="text" autocomplete="username" placeholder="Choose a username" required></label><label>Password<input id="signupPassword" type="password" autocomplete="new-password" placeholder="Choose a password" required></label><label>Confirm password<input id="signupConfirmPassword" type="password" autocomplete="new-password" placeholder="Enter it again" required></label><button class="add-expense-button full-width" type="submit">Create account</button><p class="form-message" id="signupMessage"></p></form>
+        <p class="auth-switch">Already have an account? <button type="button" id="showSignin">Sign in</button></p>
+    </div>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=17"></script>
+<script src="{% static 'expenses/app.js' %}?v=18"></script>
 </body>
 </html>
