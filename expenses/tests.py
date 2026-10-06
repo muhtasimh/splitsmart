@@ -98,6 +98,35 @@ class WorkflowTests(APITestCase):
         self.assertEqual(response.data["owed"], 0)
         self.assertEqual(response.data["owe"], 100)
 
+    def test_group_owner_can_choose_not_to_be_a_member(self):
+        response = self.client.post("/api/groups/", {
+            "name": "Managed group",
+            "member_names": ["Alex", "Jordan"],
+            "current_member_name": "",
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(Member.objects.filter(group_id=response.data["id"], user=self.user).exists())
+
+    def test_group_update_can_change_current_member_identity(self):
+        response = self.client.patch(f"/api/groups/{self.group.id}/", {
+            "member_names": ["Alice", "Bob"],
+            "current_member_name": "Bob",
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(Member.objects.get(pk=self.alice.pk).user_id)
+        self.assertEqual(Member.objects.get(pk=self.bob.pk).user_id, self.user.id)
+
+    def test_group_update_can_remove_current_member_identity(self):
+        response = self.client.patch(f"/api/groups/{self.group.id}/", {
+            "member_names": ["Alice", "Bob"],
+            "current_member_name": "",
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Member.objects.filter(group=self.group, user=self.user).exists())
+
     def test_group_can_explicitly_link_current_member(self):
         response = self.client.post("/api/groups/", {
             "name": "Trip",
