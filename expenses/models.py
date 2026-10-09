@@ -29,6 +29,9 @@ class Expense(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     paid_by = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="paid_expenses")
     participants = models.ManyToManyField(Member, related_name="shared_expenses")
+    split_mode = models.CharField(max_length=12, default="equal")
+    shares = models.JSONField(default=dict, blank=True)
+    category = models.CharField(max_length=32, default="Other")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
