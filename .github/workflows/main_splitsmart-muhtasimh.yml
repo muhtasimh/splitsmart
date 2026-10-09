@@ -78,4 +78,14 @@ jobs:
         with:
           app-name: 'splitsmart-muhtasimh'
           slot-name: 'Production'
+
+      - name: Configure startup migrations
+        run: |
+          az webapp config set \
+            --resource-group "$(az resource list --name splitsmart-muhtasimh --resource-type Microsoft.Web/sites --query '[0].resourceGroup' -o tsv)" \
+            --name splitsmart-muhtasimh \
+            --startup-file 'bash /home/site/wwwroot/startup.sh'
+          az webapp restart \
+            --resource-group "$(az resource list --name splitsmart-muhtasimh --resource-type Microsoft.Web/sites --query '[0].resourceGroup' -o tsv)" \
+            --name splitsmart-muhtasimh
           
