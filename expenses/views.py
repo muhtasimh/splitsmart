@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.shortcuts import render
@@ -50,6 +50,7 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
             "expenses": ExpenseSerializer(group.expenses.all(), many=True).data,
             "balances": self._balances(group),
             "debts": self._debts(group),
+            "settlements": SettlementSerializer(group.settlements.select_related("paid_by", "paid_to").order_by("-created_at"), many=True).data,
         })
 
     def _balance_map(self, group):
@@ -58,14 +59,35 @@ class GroupViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
             participants = list(expense.participants.all())
             if not participants:
                 continue
-            share = expense.amount / len(participants)
             balances[expense.paid_by_id] += expense.amount
-            for participant in participants:
-                balances[participant.id] -= share
+            if expense.shares:
+                for participant in participants:
+                    balances[participant.id] -= Decimal(str(expense.shares.get(str(participant.id), "0")))
+            else:
+                # Historical expenses have no saved shares.
+                cents = int((expense.amount * 100).to_integral_value())
+                base, remainder = divmod(cents, len(participants))
+                for index, participant in enumerate(sorted(participants, key=lambda m: m.id)):
+                    balances[participant.id] -= Decimal(base + (index < remainder)) / 100
         for settlement in group.settlements.all():
             balances[settlement.paid_by_id] += settlement.amount
             balances[settlement.paid_to_id] -= settlement.amount
         return balances
+
+    @action(detail=True, methods=["get"])
+    def analytics(self, request, pk=None):
+        group = self.get_object()
+        categories = {}
+        months = {}
+        for expense in group.expenses.all():
+            category = expense.category or "Other"
+            month = expense.created_at.strftime("%Y-%m")
+            categories[category] = categories.get(category, Decimal("0")) + expense.amount
+            months[month] = months.get(month, Decimal("0")) + expense.amount
+        return Response({
+            "categories": [{"name": k, "amount": str(v)} for k, v in sorted(categories.items())],
+            "months": [{"month": k, "amount": str(v)} for k, v in sorted(months.items())],
+        })
 
     def _balances(self, group):
         balances = self._balance_map(group)
@@ -137,7 +159,7 @@ class SettlementViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = SettlementSerializer
 
     def get_queryset(self):
-        return Settlement.objects.filter(group__owner=self.request.user)
+        return Settlement.objects.filter(group__owner=self.request.user).select_related("paid_by", "paid_to")
 
 
 def dashboard(request):
