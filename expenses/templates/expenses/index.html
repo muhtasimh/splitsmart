@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=19">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=20">
 </head>
 <body>
 <aside class="sidebar">
@@ -48,7 +48,15 @@
 
 <section class="app-view" id="settlementsView">
     <header class="dashboard-header"><div><h1>Settlements</h1><p class="subtitle">See simplified repayment suggestions for each group.</p></div></header>
-    <div class="panel"><div class="panel-header"><div><h2>Suggested repayments</h2><p>Choose a group to see its members, expenses, balances, and repayments.</p></div><input class="search-input" id="settlementSearch" type="search" placeholder="Search groups..."></div><div class="group-list" id="settlementGroupList"></div><div id="groupDetails"></div><div class="debt-list" id="debtList"></div></div>
+    <div class="panel"><div class="panel-header"><div><h2>Suggested repayments</h2><p>Choose a group to see its members, expenses, balances, and repayments.</p></div><input class="search-input" id="settlementSearch" type="search" placeholder="Search groups..."></div><div class="group-list" id="settlementGroupList"></div><div id="groupDetails"></div><div class="debt-list" id="debtList"></div>
+    <div id="settlementActions" class="hidden"><h3>Record repayment</h3><form id="settlementForm">
+      <label>From<select id="settlementFrom" required></select></label>
+      <label>To<select id="settlementTo" required></select></label>
+      <label>Amount<input id="settlementAmount" type="number" min="0.01" step="0.01" required></label>
+      <button class="add-expense-button" type="submit">Record repayment</button><p class="form-message" id="settlementMessage"></p>
+    </form><h3>Repayment history</h3><div id="settlementHistory"></div>
+    <h3>Spending by category</h3><div id="categoryAnalytics"></div>
+    <h3>Monthly spending</h3><div id="monthAnalytics"></div></div></div>
 </section>
 </main>
 
@@ -65,6 +73,9 @@
         <label>Group<select id="groupSelect" required></select></label>
         <label>Paid by<select id="payerSelect" required></select></label>
         <label>Participants<select id="participantSelect" multiple required></select></label>
+        <label>Split method<select id="splitMode"><option value="equal">Equally</option><option value="percentage">By percentage</option><option value="custom">Custom amounts</option></select></label>
+        <div id="splitValues" class="hidden"></div>
+        <label>Category<select id="expenseCategory"><option>Other</option><option>Food</option><option>Housing</option><option>Transport</option><option>Entertainment</option><option>Shopping</option><option>Utilities</option></select></label>
         <div class="modal-management-actions"><button class="add-expense-button" id="expenseSubmitButton" type="submit">Add expense</button><button class="delete-modal-button hidden" id="deleteExpenseButton" type="button">Delete expense</button></div><p class="form-message" id="formMessage"></p>
     </form>
 </div></div>
@@ -96,6 +107,6 @@
         <p class="auth-switch">Already have an account? <button type="button" id="showSignin">Sign in</button></p>
     </div>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=24"></script>
+<script src="{% static 'expenses/app.js' %}?v=25"></script>
 </body>
 </html>

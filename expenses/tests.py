@@ -153,3 +153,64 @@ class WorkflowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         member = Member.objects.get(group_id=response.data["id"], name="Muhtasim")
         self.assertEqual(member.user_id, self.user.id)
+
+    def test_custom_split_and_settlement_updates_balance(self):
+        created = self.client.post("/api/expenses/", {
+            "group": self.group.id, "description": "Groceries", "amount": "60.00",
+            "paid_by": self.alice.id, "participants": [self.alice.id, self.bob.id],
+            "split_mode": "custom", "split_values": {str(self.alice.id): "10.00", str(self.bob.id): "50.00"},
+            "category": "Food",
+        }, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(self.client.get(f"/api/groups/{self.group.id}/debts/").data[0]["amount"], 50.0)
+        settlement = self.client.post("/api/settlements/", {
+            "group": self.group.id, "paid_by": self.bob.id, "paid_to": self.alice.id,
+            "amount": "20.00",
+        }, format="json")
+        self.assertEqual(settlement.status_code, 201, settlement.data)
+        self.assertEqual(self.client.get(f"/api/groups/{self.group.id}/debts/").data[0]["amount"], 30.0)
+        analytics = self.client.get(f"/api/groups/{self.group.id}/analytics/")
+        self.assertEqual(analytics.data["categories"][0]["name"], "Food")
+        self.assertEqual(analytics.data["categories"][0]["amount"], "60.00")
+
+    def test_equal_split_assigns_all_cents(self):
+        charlie = Member.objects.create(group=self.group, name="Charlie")
+        created = self.client.post("/api/expenses/", {
+            "group": self.group.id, "description": "Shared", "amount": "10.00",
+            "paid_by": self.alice.id, "participants": [self.alice.id, self.bob.id, charlie.id],
+        }, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        from decimal import Decimal
+        self.assertEqual(sum(Decimal(x) for x in created.data["shares"].values()), Decimal("10.00"))
+
+    def test_percentage_split(self):
+        response = self.client.post("/api/expenses/", {
+            "group": self.group.id, "description": "Dinner", "amount": "40.00",
+            "paid_by": self.alice.id, "participants": [self.alice.id, self.bob.id],
+            "split_mode": "percentage", "split_values": {str(self.alice.id): "25.00", str(self.bob.id): "75.00"},
+        }, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["shares"][str(self.bob.id)], "30")
+
+    def test_invalid_splits_and_cross_owner_writes_rejected(self):
+        invalid = self.client.post("/api/expenses/", {
+            "group": self.group.id, "description": "Dinner", "amount": "40.00",
+            "paid_by": self.alice.id, "participants": [self.alice.id, self.bob.id],
+            "split_mode": "custom", "split_values": {str(self.alice.id): "5.00", str(self.bob.id): "5.00"},
+        }, format="json")
+        self.assertEqual(invalid.status_code, 400)
+        other_group = Group.objects.create(name="Private", owner=self.other)
+        outsider = Member.objects.create(group=other_group, name="Outsider")
+        for url, payload in [
+            ("/api/expenses/", {"group": other_group.id, "description": "X", "amount": "10.00", "paid_by": outsider.id, "participants": [outsider.id]}),
+            ("/api/settlements/", {"group": other_group.id, "paid_by": outsider.id, "paid_to": self.bob.id, "amount": "10.00"}),
+        ]:
+            self.assertEqual(self.client.post(url, payload, format="json").status_code, 400)
+        self.assertEqual(self.client.get(f"/api/groups/{other_group.id}/analytics/").status_code, 404)
+
+    def test_invalid_settlement_rejected(self):
+        response = self.client.post("/api/settlements/", {
+            "group": self.group.id, "paid_by": self.bob.id, "paid_to": self.bob.id,
+            "amount": "20.00",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
