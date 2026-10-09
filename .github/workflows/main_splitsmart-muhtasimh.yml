@@ -84,7 +84,7 @@ jobs:
           az webapp config set \
             --resource-group "$(az resource list --name splitsmart-muhtasimh --resource-type Microsoft.Web/sites --query '[0].resourceGroup' -o tsv)" \
             --name splitsmart-muhtasimh \
-            --startup-file 'bash /home/site/wwwroot/startup.sh'
+            --startup-file 'bash startup.sh'
           az webapp restart \
             --resource-group "$(az resource list --name splitsmart-muhtasimh --resource-type Microsoft.Web/sites --query '[0].resourceGroup' -o tsv)" \
             --name splitsmart-muhtasimh
