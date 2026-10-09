@@ -1,3 +1,4 @@
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import Group, Member, Expense, Settlement
@@ -86,10 +87,14 @@ class ExpenseSerializer(serializers.ModelSerializer):
     paid_by_name = serializers.CharField(source="paid_by.name", read_only=True)
     participant_names = serializers.SerializerMethodField()
     group_name = serializers.CharField(source="group.name", read_only=True)
+    split_values = serializers.DictField(child=serializers.DecimalField(max_digits=12, decimal_places=2), write_only=True, required=False)
 
     class Meta:
         model = Expense
-        fields = ["id", "group", "group_name", "description", "amount", "paid_by", "paid_by_name", "participants", "participant_names", "created_at"]
+        fields = ["id", "group", "group_name", "description", "amount", "paid_by",
+                  "paid_by_name", "participants", "participant_names", "split_mode",
+                  "split_values", "shares", "category", "created_at"]
+        read_only_fields = ["shares"]
 
     def get_participant_names(self, obj):
         return list(obj.participants.values_list("name", flat=True))
@@ -99,14 +104,47 @@ class ExpenseSerializer(serializers.ModelSerializer):
         paid_by = data.get("paid_by", getattr(self.instance, "paid_by", None))
         participants = data.get("participants", list(self.instance.participants.all()) if self.instance else [])
         amount = data.get("amount", getattr(self.instance, "amount", None))
-        if amount is not None and amount <= 0:
+        mode = data.get("split_mode", getattr(self.instance, "split_mode", "equal"))
+        values = data.get("split_values", None)
+        if group is None or group.owner_id != self.context["request"].user.id:
+            raise serializers.ValidationError({"group": "Invalid group."})
+        if amount is None or amount <= 0:
             raise serializers.ValidationError({"amount": "Expense amount must be greater than zero."})
-        if paid_by and paid_by.group_id != group.id:
+        if paid_by is None or paid_by.group_id != group.id:
             raise serializers.ValidationError({"paid_by": "Payer must be a member of the group."})
         if not participants:
             raise serializers.ValidationError({"participants": "At least one participant is required."})
         if any(member.group_id != group.id for member in participants):
             raise serializers.ValidationError({"participants": "All participants must belong to the group."})
+        if mode not in ("equal", "percentage", "custom"):
+            raise serializers.ValidationError({"split_mode": "Invalid split mode."})
+        ids = [str(m.id) for m in sorted(participants, key=lambda m: m.id)]
+        cents = int((amount * 100).to_integral_value())
+        if mode == "equal":
+            base, remainder = divmod(cents, len(ids))
+            shares = {member_id: str(Decimal(base + (i < remainder)) / 100) for i, member_id in enumerate(ids)}
+        else:
+            if values is None and self.instance and not any(k in data for k in ("amount", "participants", "split_mode")) and mode == self.instance.split_mode:
+                shares = self.instance.shares
+            else:
+                if values is None or set(values) != set(ids):
+                    raise serializers.ValidationError({"split_values": "Provide a value for every participant."})
+                if any(value < 0 for value in values.values()):
+                    raise serializers.ValidationError({"split_values": "Values cannot be negative."})
+                if mode == "percentage":
+                    if sum(values.values()) != Decimal("100.00"):
+                        raise serializers.ValidationError({"split_values": "Percentages must total 100."})
+                    raw = {k: (amount * values[k] / 100) for k in ids}
+                    allocated = {k: int((raw[k] * 100).to_integral_value(rounding=ROUND_HALF_UP)) for k in ids}
+                    difference = cents - sum(allocated.values())
+                    allocated[ids[0]] += difference
+                    shares = {k: str(Decimal(allocated[k]) / 100) for k in ids}
+                else:
+                    if sum(values.values()) != amount:
+                        raise serializers.ValidationError({"split_values": "Custom amounts must equal the expense total."})
+                    shares = {k: str(values[k]) for k in ids}
+        data["shares"] = shares
+        data.pop("split_values", None)
         return data
 
 
@@ -114,3 +152,18 @@ class SettlementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Settlement
         fields = ["id", "group", "paid_by", "paid_to", "amount", "created_at"]
+
+    def validate(self, data):
+        group = data.get("group", getattr(self.instance, "group", None))
+        payer = data.get("paid_by", getattr(self.instance, "paid_by", None))
+        receiver = data.get("paid_to", getattr(self.instance, "paid_to", None))
+        amount = data.get("amount", getattr(self.instance, "amount", None))
+        if group is None or group.owner_id != self.context["request"].user.id:
+            raise serializers.ValidationError({"group": "Invalid group."})
+        if not payer or payer.group_id != group.id or not receiver or receiver.group_id != group.id:
+            raise serializers.ValidationError("Both members must belong to the group.")
+        if payer.pk == receiver.pk:
+            raise serializers.ValidationError("A member cannot pay themselves.")
+        if amount is None or amount <= 0:
+            raise serializers.ValidationError({"amount": "Settlement amount must be positive."})
+        return data
