@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /home/site/wwwroot
+cd "$(dirname "$(readlink -f "$0")")"
 
 # Azure App Service's Python/Oryx image normally activates the environment
 # before invoking the configured startup command.
