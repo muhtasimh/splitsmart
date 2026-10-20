@@ -721,3 +721,21 @@ body {
 .add-member-button{align-self:flex-start;border:0;background:transparent;color:var(--primary);padding:4px 0;font-size:13px;font-weight:700}
 .add-member-button:hover{text-decoration:underline}
 @media(max-width:500px){.member-editor-heading{align-items:flex-start;flex-direction:column;gap:3px}.member-edit-row{grid-template-columns:minmax(0,1fr) 92px 38px}}
+
+
+/* Settlements: consistent cards, spacing and form controls. */
+#settlementsView #settlementGroupList { margin-bottom: 8px; }
+#settlementsView #groupDetails:not(:empty) { margin-top: 18px; }
+#settlementsView #settlementActions:not(.hidden) { display: grid; gap: 22px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+#settlementsView #settlementActions h3 { font-size: 16px; font-weight: 700; margin: 0 0 12px; }
+#settlementsView #settlementActions > h3:not(:first-child) { padding-top: 20px; border-top: 1px solid var(--border); margin-bottom: -12px; }
+#settlementForm { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end; }
+#settlementForm label { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text); }
+#settlementForm select, #settlementForm input { width: 100%; min-width: 0; height: 43px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: #f9fafb; color: var(--text); outline: none; }
+#settlementForm select:focus, #settlementForm input:focus { border-color: var(--primary); background: white; }
+#settlementForm .add-expense-button { justify-self: start; }
+#settlementForm .form-message { text-align: left; align-self: center; }
+#settlementHistory, #categoryAnalytics, #monthAnalytics { color: var(--muted); font-size: 14px; line-height: 1.7; }
+#settlementHistory:empty, #categoryAnalytics:empty, #monthAnalytics:empty { display: none; }
+#settlementActions.hidden { display: none; }
+@media (max-width: 700px) { #settlementForm { grid-template-columns: 1fr; } #settlementForm .add-expense-button { width: 100%; } }
