@@ -753,3 +753,8 @@ body {
 .settlement-analytics-content h3 { font-size: 16px; margin: 0 0 14px; }
 .settlement-analytics-content #categoryAnalytics { margin-bottom: 24px; }
 #settlementRepayments #settlementActions:not(.hidden) { border-top: 1px solid var(--border); }
+
+/* Clearly identify suggestions without implying that payments occurred. */
+#suggestedPaymentsSection.hidden { display: none; }
+.suggested-payments-heading { font-size: 16px; margin: 22px 0 5px; }
+.suggested-payments-note { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
