@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=23">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=24">
 </head>
 <body>
 <aside class="sidebar">
@@ -65,7 +65,7 @@
         <div class="group-list" id="settlementGroupList"></div>
         <div id="settlementSuggestions" class="settlement-subview">
             <div id="groupDetails"></div>
-            <div id="suggestedPaymentsSection" class="hidden"><h3 class="suggested-payments-heading">Suggested payments</h3><p class="suggested-payments-note">These are recommendations only. No payment has been recorded.</p><div class="debt-list" id="debtList"></div></div>
+            <div id="suggestedPaymentsSection" class="hidden"><h3 class="suggested-payments-heading">Suggested payments</h3><p class="suggested-payments-note">Suggested only · Not yet recorded</p><div class="debt-list" id="debtList"></div></div>
         </div>
         <div id="settlementRepayments" class="settlement-subview hidden">
             <div id="settlementActions" class="hidden">
@@ -86,7 +86,7 @@
                 <h3>Monthly spending</h3><div id="monthAnalytics"></div>
             </div>
         </div>
-        <p class="settlement-select-hint hidden" id="settlementSelectHint">Choose a group above to see its information.</p>
+        
     </div>
 </section>
 </main>
@@ -138,6 +138,6 @@
         <p class="auth-switch">Already have an account? <button type="button" id="showSignin">Sign in</button></p>
     </div>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=28"></script>
+<script src="{% static 'expenses/app.js' %}?v=29"></script>
 </body>
 </html>
