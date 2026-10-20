@@ -14,5 +14,8 @@ fi
 echo "Applying SplitSmart database migrations..."
 python manage.py migrate --noinput
 
+echo "Collecting SplitSmart static files..."
+python manage.py collectstatic --noinput
+
 echo "Starting SplitSmart..."
 exec gunicorn --bind "0.0.0.0:${PORT:-8000}" --timeout 120 splitsmart.wsgi:application
