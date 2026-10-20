@@ -758,3 +758,17 @@ body {
 #suggestedPaymentsSection.hidden { display: none; }
 .suggested-payments-heading { font-size: 16px; margin: 22px 0 5px; }
 .suggested-payments-note { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+
+/* Keep long expense forms accessible without browser zooming. */
+#expenseModal { overflow-y: auto; align-items: safe center; }
+#expenseModal .modal-card { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
+@supports not (height: 100dvh) { #expenseModal .modal-card { max-height: calc(100vh - 40px); } }
+@media (max-height: 550px) { #expenseModal { align-items: start; } }
+
+/* Dashboard shortcuts to new settlement tools. */
+.dashboard-shortcuts { margin-top: 22px; }
+.dashboard-shortcuts h2 { font-size: 17px; margin-bottom: 12px; }
+.dashboard-shortcut-links { display: flex; flex-wrap: wrap; gap: 12px; }
+.dashboard-shortcut { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-width: 200px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; color: var(--text); font-weight: 650; text-align: left; }
+.dashboard-shortcut span { color: var(--primary); font-size: 19px; }
+.dashboard-shortcut:hover { border-color: #c7d2fe; background: #f9fafb; }
