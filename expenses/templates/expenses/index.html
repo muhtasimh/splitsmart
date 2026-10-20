@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SplitSmart | Shared Expense Manager</title>
-    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=22">
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}?v=23">
 </head>
 <body>
 <aside class="sidebar">
@@ -33,6 +33,13 @@
     <section class="dashboard-grid">
         <div class="panel"><div class="panel-header"><div><h2>Recent expenses</h2><p>Your latest shared purchases</p></div></div><div class="expense-list" id="dashboardExpenseList"><div class="empty-state">Loading expenses...</div></div></div>
         <div class="panel"><div class="panel-header"><div><h2>Your groups</h2><p>People you share expenses with</p></div></div><div class="group-list" id="dashboardGroupList"><div class="empty-state">Loading groups...</div></div></div>
+    </section>
+    <section class="dashboard-shortcuts" aria-label="Quick actions">
+        <h2>Quick actions</h2>
+        <div class="dashboard-shortcut-links">
+            <button type="button" class="dashboard-shortcut" data-dashboard-settlement="repayments">Record payments <span>→</span></button>
+            <button type="button" class="dashboard-shortcut" data-dashboard-settlement="analytics">View analytics <span>→</span></button>
+        </div>
     </section>
 </section>
 
@@ -131,6 +138,6 @@
         <p class="auth-switch">Already have an account? <button type="button" id="showSignin">Sign in</button></p>
     </div>
 </div></div>
-<script src="{% static 'expenses/app.js' %}?v=27"></script>
+<script src="{% static 'expenses/app.js' %}?v=28"></script>
 </body>
 </html>
